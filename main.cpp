@@ -10,6 +10,42 @@
 #include <SDL3/SDL_opengl.h>
 #endif
 
+#include <vector>
+#include <string>
+#include <sstream>
+#include <cmath>
+
+using namespace std;
+
+class Vec2: public ImVec2 {
+public:
+    Vec2() : ImVec2() {}
+    Vec2(ImVec2 vec) : ImVec2(vec) {}
+    Vec2(float x, float y): ImVec2(x, y) {}
+
+    Vec2 operator+(const Vec2 &b) const { return {x + b.x, y + b.y}; }
+    Vec2& operator+=(const Vec2 &b) {
+        x += b.x;
+        y += b.y;
+        return *this;
+    }
+    Vec2 operator-() const { return {-x, -y}; }
+    Vec2 operator-(const Vec2 &b) const { return {x - b.x, y - b.y}; }
+
+    Vec2 operator*(float b) const { return {x * b, y * b}; }
+    Vec2 operator/(float b) const { return {x / b, y / b}; }
+
+    float abs() const { return sqrt(x * x + y * y); }
+    Vec2 norm() const { return *this / abs(); }
+
+    string to_string() const
+    {
+        stringstream ss;
+        ss << "v(" << x << ", " << y << ")";
+        return ss.str();
+    }
+};
+
 // Main code
 int main(int, char **)
 {
@@ -80,14 +116,7 @@ int main(int, char **)
 
     // Main loop
     bool done = false;
-#ifdef __EMSCRIPTEN__
-    // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
-    // You may manually call LoadIniSettingsFromMemory() to load settings from your own storage.
-    io.IniFilename = NULL;
-    EMSCRIPTEN_MAINLOOP_BEGIN
-#else
     while (!done)
-#endif
     {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -115,26 +144,31 @@ int main(int, char **)
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
-            static float f = 0.0f;
+            static float sz = 36.0f;
+            static float R = sz / 2;
             static int counter = 0;
+            static vector<Vec2> points{ {0, 0}, {100, 0} };
+            static int selected = -1;
 
-            ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
+            ImGui::Begin("Hello, world!");
+            const Vec2 p = ImGui::GetCursorScreenPos();
+            ImGui::InvisibleButton("canvas", ImGui::GetContentRegionAvail(), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
 
-            ImGui::Text("This is some useful text.");          // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
+            const Vec2 mouse = ImGui::GetMousePos();
+            if(selected == -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left)){
+                for(int i = 0; i < points.size() && selected == -1; i++)
+                    if((points[i] + p - mouse).abs() <= R) selected = i;
+            }
+            if (selected != -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+                points[selected] = mouse - p;
+            else if(selected != -1 && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+                selected = -1;
 
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);             // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
-            
+            const ImU32 col = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
+            ImDrawList *draw_list = ImGui::GetWindowDrawList();
+            for(ImVec2 point : points){
+                draw_list->AddNgonFilled(p + point, R, col, 36);
+            }
 
             ImGui::End();
         }
@@ -157,9 +191,6 @@ int main(int, char **)
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(window);
     }
-#ifdef __EMSCRIPTEN__
-    EMSCRIPTEN_MAINLOOP_END;
-#endif
 
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
