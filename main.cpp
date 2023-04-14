@@ -16,6 +16,8 @@
 #include <cmath>
 #include <algorithm>
 #include <chrono>
+#include <map>
+#include "linked_list.tpp"
 
 using namespace std;
 
@@ -27,14 +29,17 @@ public:
 
     Vec2 operator+(const Vec2 &b) const { return {x + b.x, y + b.y}; }
     Vec2& operator+=(const Vec2 &b) {
-        x += b.x;
-        y += b.y;
+        x += b.x; y += b.y;
         return *this;
     }
     Vec2 operator-() const { return {-x, -y}; }
     Vec2 operator-(const Vec2 &b) const { return {x - b.x, y - b.y}; }
 
-    Vec2 operator*(float b) const { return {x * b, y * b}; }
+    Vec2 operator*(const float b) const { return {x * b, y * b}; }
+    Vec2 &operator*=(const float b) {
+        x *= b; y *= b;
+        return *this;
+    }
     Vec2 operator/(float b) const { return {x / b, y / b}; }
 
     float abs() const { return sqrt(x * x + y * y); }
@@ -51,21 +56,10 @@ public:
 struct Field {
     const float cell_size;
     vector<Vec2> points;
-    vector<Vec2> speed;
-    vector<vector<vector<int>>> field;
+    vector<Vec2> speeds;
+    map<int, map<int, linked_list_root<int>>> field;
 
-    int compute_cell_num(float size) { return ceil(size / cell_size); }
-
-    Field(float cell_size, Vec2 cur_size): cell_size(cell_size) {
-        field = {
-            compute_cell_num(cur_size.x),
-            vector<vector<int>>(
-                compute_cell_num(cur_size.y),
-                vector<int>()
-            )
-        };
-        points = vector<Vec2>();
-    }
+    Field(float cell_size): cell_size(cell_size), points(), speeds() {}
     
     static float sign(float a){
         if(a > 0) return 1;
@@ -76,15 +70,15 @@ struct Field {
     static int min(int a, int b) { return a > b ? b : a; }
 
     pair<int, int> get_field_index(const Vec2& point) const {
-        int x = min((int) floor(point.x / cell_size), field.size());
-        int y = min((int) floor(point.y / cell_size), field[0].size());
-        return {x, y};
+        return {
+            static_cast<int>(point.x / cell_size),
+            static_cast<int>(point.y / cell_size)
+        };
     }
 
     void remove_from_field(const pair<int, int>& field_index, int point_index) {
         const Vec2& point = points[point_index];
-        auto& v = field[field_index.first][field_index.second];
-        v.erase(find(v.begin(), v.end(), point_index));
+        field[field_index.first][field_index.second].remove_val(point_index);
     }
 
     void add_to_field(const pair<int, int>& field_index, int point_index) {
@@ -95,6 +89,7 @@ struct Field {
     void add_points(vector<Vec2> new_points) {
         const int prev_size = points.size();
         points.resize(points.size() + new_points.size());
+        speeds.resize(points.size());
         copy(new_points.begin(), new_points.end(), points.begin() + prev_size);
         for(int i = 0; i < new_points.size(); i++){
             const auto field_index = get_field_index(points[i + prev_size]);
@@ -109,23 +104,33 @@ struct Field {
             const auto field_index = get_field_index(point);
             for (int dx = -1; dx <= 1; dx++)
             for (int dy = -1; dy <= 1; dy++) {
-                if (field_index.first + dx < 0 || field_index.second + dy < 0 ||
-                    field_index.first + dx >= field.size() || field_index.second + dy >= field[0].size())
-                    continue;
-                auto &v = field[field_index.first + dx][field_index.second + dy];
-                for(int j : v){
-                    const Vec2 &point_b = points[j];
+                const auto& list = field[field_index.first + dx][field_index.second + dy];
+                if(list.size == 0) continue;
+                auto buff = list.first;
+                for(; buff != nullptr; buff = buff->next){
+                    if (buff->val == i) continue;
+                    const Vec2 &point_b = points[buff->val];
                     const Vec2 delta = point_b - point;
                     const float delta_abs = delta.abs() - cell_size / 2;
-                    forces[i] += delta.norm() * (sign(delta_abs) * pow(delta_abs, 2));
+                    forces[i] += delta.norm() * (pow(delta_abs, 3)) / 1e3;
                 }
             }
         }
 
         for(int i = 0; i < points.size(); i++){
             Vec2 &point = points[i];
+            Vec2 &speed = speeds[i];
             const auto field_index = get_field_index(point);
-            point += forces[i] * dt;
+            speed += forces[i] * dt;
+            speed *= 0.95;
+
+            const static float max_speed = 1e3;
+            const float abs_speed = speed.abs();
+            if (abs_speed > max_speed) speed *= max_speed / abs_speed;
+            if (abs_speed < 0.5) speed = {0, 0};
+
+            point += speed * dt;
+
             const auto new_field_index = get_field_index(point);
             if(field_index != new_field_index){
                 remove_from_field(field_index, i);
@@ -139,9 +144,9 @@ struct Field {
         static int selected = -1;
 
         ImGui::Begin("Field");
-        ImGui::SetWindowSize({500, 500});
+        ImGui::SetWindowSize({500, 500}, ImGuiCond_Appearing);
         const Vec2 p = ImGui::GetCursorScreenPos();
-        //ImGui::InvisibleButton("canvas", ImGui::GetContentRegionAvail(), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
+        ImGui::InvisibleButton("canvas", ImGui::GetContentRegionAvail(), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
 
         const Vec2 mouse = ImGui::GetMousePos();
         if (selected == -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left))
@@ -171,6 +176,18 @@ static double time()
     using namespace std::chrono;
     return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() / 1000.;
 }
+
+// MSVC compiler main() error workaround
+// https://stackoverflow.com/a/58819006/8302811
+#ifdef _WIN32
+int main(int, char **);
+int APIENTRY WinMain(HINSTANCE hInstance,
+                     HINSTANCE hPrevInstance,
+                     LPSTR lpCmdLine, int nCmdShow)
+{
+    return main(__argc, __argv);
+}
+#endif
 
 // Main code
 int main(int, char **)
@@ -240,10 +257,10 @@ int main(int, char **)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    Field field(100, {500, 500});
+    Field field(200);
     field.add_points({
         {100, 100}, {200, 100}, {300, 100},
-        {200, 100}, {200, 200}, {300, 200}
+        {100, 200}, {200, 200}, {300, 200}
     });
     double prev_time = time();
 
