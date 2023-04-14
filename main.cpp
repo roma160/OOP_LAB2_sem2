@@ -14,6 +14,8 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <algorithm>
+#include <chrono>
 
 using namespace std;
 
@@ -45,6 +47,130 @@ public:
         return ss.str();
     }
 };
+
+struct Field {
+    const float cell_size;
+    vector<Vec2> points;
+    vector<Vec2> speed;
+    vector<vector<vector<int>>> field;
+
+    int compute_cell_num(float size) { return ceil(size / cell_size); }
+
+    Field(float cell_size, Vec2 cur_size): cell_size(cell_size) {
+        field = {
+            compute_cell_num(cur_size.x),
+            vector<vector<int>>(
+                compute_cell_num(cur_size.y),
+                vector<int>()
+            )
+        };
+        points = vector<Vec2>();
+    }
+    
+    static float sign(float a){
+        if(a > 0) return 1;
+        if(a < 0) return -1;
+        return 0;
+    }
+
+    static int min(int a, int b) { return a > b ? b : a; }
+
+    pair<int, int> get_field_index(const Vec2& point) const {
+        int x = min((int) floor(point.x / cell_size), field.size());
+        int y = min((int) floor(point.y / cell_size), field[0].size());
+        return {x, y};
+    }
+
+    void remove_from_field(const pair<int, int>& field_index, int point_index) {
+        const Vec2& point = points[point_index];
+        auto& v = field[field_index.first][field_index.second];
+        v.erase(find(v.begin(), v.end(), point_index));
+    }
+
+    void add_to_field(const pair<int, int>& field_index, int point_index) {
+        auto &v = field[field_index.first][field_index.second];
+        field[field_index.first][field_index.second].push_back(point_index);
+    }
+
+    void add_points(vector<Vec2> new_points) {
+        const int prev_size = points.size();
+        points.resize(points.size() + new_points.size());
+        copy(new_points.begin(), new_points.end(), points.begin() + prev_size);
+        for(int i = 0; i < new_points.size(); i++){
+            const auto field_index = get_field_index(points[i + prev_size]);
+            add_to_field(field_index, i + prev_size);
+        }
+    }
+
+    void do_tick(float dt){
+        vector<Vec2> forces(points.size());
+        for(int i = 0; i < points.size(); i++){
+            Vec2 &point = points[i];
+            const auto field_index = get_field_index(point);
+            for (int dx = -1; dx <= 1; dx++)
+            for (int dy = -1; dy <= 1; dy++) {
+                if (field_index.first + dx < 0 || field_index.second + dy < 0 ||
+                    field_index.first + dx >= field.size() || field_index.second + dy >= field[0].size())
+                    continue;
+                auto &v = field[field_index.first + dx][field_index.second + dy];
+                for(int j : v){
+                    const Vec2 &point_b = points[j];
+                    const Vec2 delta = point_b - point;
+                    const float delta_abs = delta.abs() - cell_size / 2;
+                    forces[i] += delta.norm() * (sign(delta_abs) * pow(delta_abs, 2));
+                }
+            }
+        }
+
+        for(int i = 0; i < points.size(); i++){
+            Vec2 &point = points[i];
+            const auto field_index = get_field_index(point);
+            point += forces[i] * dt;
+            const auto new_field_index = get_field_index(point);
+            if(field_index != new_field_index){
+                remove_from_field(field_index, i);
+                add_to_field(new_field_index, i);
+            }
+        }
+    }
+
+    void draw(){
+        const float R = 18;
+        static int selected = -1;
+
+        ImGui::Begin("Field");
+        ImGui::SetWindowSize({500, 500});
+        const Vec2 p = ImGui::GetCursorScreenPos();
+        //ImGui::InvisibleButton("canvas", ImGui::GetContentRegionAvail(), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
+
+        const Vec2 mouse = ImGui::GetMousePos();
+        if (selected == -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        {
+            for (int i = 0; i < points.size() && selected == -1; i++)
+                if ((points[i] + p - mouse).abs() <= R)
+                selected = i;
+        }
+        if (selected != -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+            points[selected] = mouse - p;
+        else if (selected != -1 && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+            selected = -1;
+
+        const ImU32 col = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
+        ImDrawList *draw_list = ImGui::GetWindowDrawList();
+        for (ImVec2 point : points)
+        {
+            draw_list->AddNgonFilled(p + point, R, col, 36);
+        }
+
+        ImGui::End();
+    }
+}
+;
+static double time()
+{
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() / 1000.;
+}
 
 // Main code
 int main(int, char **)
@@ -114,6 +240,13 @@ int main(int, char **)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+    Field field(100, {500, 500});
+    field.add_points({
+        {100, 100}, {200, 100}, {300, 100},
+        {200, 100}, {200, 200}, {300, 200}
+    });
+    double prev_time = time();
+
     // Main loop
     bool done = false;
     while (!done)
@@ -142,36 +275,10 @@ int main(int, char **)
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-        {
-            static float sz = 36.0f;
-            static float R = sz / 2;
-            static int counter = 0;
-            static vector<Vec2> points{ {0, 0}, {100, 0} };
-            static int selected = -1;
-
-            ImGui::Begin("Hello, world!");
-            const Vec2 p = ImGui::GetCursorScreenPos();
-            ImGui::InvisibleButton("canvas", ImGui::GetContentRegionAvail(), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
-
-            const Vec2 mouse = ImGui::GetMousePos();
-            if(selected == -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left)){
-                for(int i = 0; i < points.size() && selected == -1; i++)
-                    if((points[i] + p - mouse).abs() <= R) selected = i;
-            }
-            if (selected != -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left))
-                points[selected] = mouse - p;
-            else if(selected != -1 && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
-                selected = -1;
-
-            const ImU32 col = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
-            ImDrawList *draw_list = ImGui::GetWindowDrawList();
-            for(ImVec2 point : points){
-                draw_list->AddNgonFilled(p + point, R, col, 36);
-            }
-
-            ImGui::End();
-        }
+        double cur_time = time();
+        field.do_tick(cur_time - prev_time);
+        prev_time = cur_time;
+        field.draw();
 
         // 3. Show another simple window.
         if (show_another_window)
