@@ -111,8 +111,8 @@ struct Field {
                     if (buff->val == i) continue;
                     const Vec2 &point_b = points[buff->val];
                     const Vec2 delta = point_b - point;
-                    const float delta_abs = delta.abs() - cell_size / 2;
-                    forces[i] += delta.norm() * (pow(delta_abs, 3)) / 1e3;
+                    const float delta_abs = (delta.abs() - cell_size / 2) / 200;
+                    forces[i] += delta.norm() * 1000 * delta_abs * exp(-delta_abs);
                 }
             }
         }
@@ -262,7 +262,8 @@ int main(int, char **)
         {100, 100}, {200, 100}, {300, 100},
         {100, 200}, {200, 200}, {300, 200}
     });
-    double prev_time = time();
+    double start_time = 0;
+    double dt = 0;
 
     // Main loop
     bool done = false;
@@ -282,6 +283,7 @@ int main(int, char **)
             if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(window))
                 done = true;
         }
+        start_time = time();
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -292,9 +294,7 @@ int main(int, char **)
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
-        double cur_time = time();
-        field.do_tick(cur_time - prev_time);
-        prev_time = cur_time;
+        field.do_tick(dt);
         field.draw();
 
         // 3. Show another simple window.
@@ -314,6 +314,8 @@ int main(int, char **)
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(window);
+
+        dt = time() - start_time;
     }
 
     // Cleanup
