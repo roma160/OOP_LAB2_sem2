@@ -97,11 +97,12 @@ int main(int, char **)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    Field field(200);
-    field.add_points({
-        {100, 100}, {200, 100}, {300, 100},
-        {100, 200}, {200, 200}, {300, 200}
+    Graph graph(5, {
+        {0, 1}, {1, 2}, {2, 3}, {3, 4}
     });
+
+    Field field(200);
+    field.add_graph(graph);
     double start_time = 0;
     double dt = 0;
 
