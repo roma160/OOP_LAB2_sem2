@@ -13,7 +13,7 @@
 
 #include "vec2.tpp"
 #include "utils.tpp"
-#include "field.tpp"
+#include "field.h"
 #include "linked_list.tpp"
 
 using namespace std;
