@@ -10,7 +10,7 @@
 
 using namespace std;
 
-static double time()
+inline double time()
 {
     using namespace std::chrono;
     return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count() / 1000.;
@@ -27,10 +27,11 @@ ostream& operator<<(ostream& stream, const vector<T> v){
     return stream;
 }
 
-float sign(float a){
+// https://stackoverflow.com/a/5417289/8302811
+inline float sign(float a){
     if(a > 0) return 1;
     if(a < 0) return -1;
     return 0;
 }
 
-int min(int a, int b) { return a > b ? b : a; }
+inline int min(int a, int b) { return a > b ? b : a; }

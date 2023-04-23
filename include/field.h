@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vec2.tpp"
+#include "vec2.h"
 #include "linked_list.tpp"
 #include "graph.tpp"
 
@@ -22,7 +22,7 @@ private:
 public:
     const float cell_size;
 
-    Field(float cell_size): cell_size(cell_size), points(), speeds() {}
+    Field(float cell_size);
 
     pair<int, int> get_field_index(const Vec2& point) const;
 

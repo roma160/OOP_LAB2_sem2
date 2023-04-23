@@ -11,9 +11,8 @@
 #include <SDL3/SDL_opengl.h>
 #endif
 
-#include "vec2.tpp"
 #include "utils.tpp"
-#include "field.tpp"
+#include "field.h"
 #include "linked_list.tpp"
 
 using namespace std;
@@ -134,8 +133,6 @@ int main(int, char **)
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
-
-        FieldGraphLink link(0, 0);
 
         field.do_tick(dt);
         field.draw();

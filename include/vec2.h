@@ -39,8 +39,3 @@ public:
         return ss.str();
     }
 };
-
-ostream& operator<<(ostream& stream, const Vec2& vec){
-    stream << vec.to_string();
-    return stream;
-}
