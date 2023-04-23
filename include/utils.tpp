@@ -1,11 +1,12 @@
 #pragma once
 
+#include "vec2.tpp"
+
 #include <stddef.h>
 #include <string>
 #include <sstream>
 #include <ostream>
 #include <chrono>
-
 #include <vector>
 
 using namespace std;
