@@ -52,9 +52,15 @@ inline bool operator!=(const Field::FGraphLink& a, const Field::FGraphLink& b)
 { return !(a == b); }
 
 Vec2 Field::def_compute_force(Vec2 delta, float force_distance, bool connected) {
-    const float delta_abs = (delta.abs() - force_distance / 2);
-    if(!connected) return delta.norm() * delta_abs * exp(-delta_abs);
-    else return delta.norm() * pow(delta_abs, 2) * sign(delta_abs);
+    if(!connected){
+        const float x = (delta.abs() - force_distance);
+        if (x >= 0) return delta.norm() * sqrt(abs(x)) * 10;
+        else return delta.norm() * pow(x / 10, 3);
+    }
+    else{
+        const float x = (delta.abs() - force_distance / 2);
+        return delta.norm() * pow(x, 2) * sign(x);
+    }
 }
 
 void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, bool)){
