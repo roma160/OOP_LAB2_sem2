@@ -75,7 +75,7 @@ void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, bool)){
 
             // Looking over connected verticies
             for(int j = 0; j < n; j++){
-                if(!graphs[g].connections[i.node_id][j]) continue;
+                if(i.node_id == j || !graphs[g].connections[i.node_id][j]) continue;
                 Vec2 &point_b = graphs[g].points[j];
                 forces[i.graph_id][i.node_id] += force_function(
                     point_b - point, cell_size, true);
