@@ -1,5 +1,6 @@
 // UI libs
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
@@ -10,6 +11,7 @@
 #include <SDL3/SDL_opengl.h>
 #endif
 
+#include <iostream>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -52,6 +54,12 @@ public:
         return ss.str();
     }
 };
+
+ostream& operator<<(ostream& stream, const Vec2& vec){
+    stream << vec.to_string();
+    return stream;
+}
+
 
 struct Field {
     const float cell_size;
@@ -112,7 +120,7 @@ struct Field {
                     const Vec2 &point_b = points[buff->val];
                     const Vec2 delta = point_b - point;
                     const float delta_abs = (delta.abs() - cell_size / 2) / 200;
-                    forces[i] += delta.norm() * 1000 * delta_abs * exp(-delta_abs);
+                    forces[i] += delta.norm() * 2000 * delta_abs * exp(-delta_abs);
                 }
             }
         }
@@ -131,11 +139,25 @@ struct Field {
 
             point += speed * dt;
 
-            const auto new_field_index = get_field_index(point);
-            if(field_index != new_field_index){
-                remove_from_field(field_index, i);
-                add_to_field(new_field_index, i);
-            }
+            recalculate_cell_for_point(field_index, i);
+        }
+    }
+
+    // const int sizes_sum() const {
+    //     int sum = 0;
+    //     for (auto i = field.begin(); i != field.end(); i++){
+    //         for(auto j = i->second.begin(); j != i->second.end(); j++){
+    //             sum += j->second.size;
+    //         }
+    //     }
+    //     return sum;
+    // }
+
+    void recalculate_cell_for_point(const pair<int, int>& old_field_index, int point_index){
+        const auto new_field_index = get_field_index(points[point_index]);
+        if(old_field_index != new_field_index){
+            remove_from_field(old_field_index, point_index);
+            add_to_field(new_field_index, point_index);
         }
     }
 
@@ -143,10 +165,19 @@ struct Field {
         const float R = 18;
         static int selected = -1;
 
+        const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 20, main_viewport->WorkPos.y + 20), ImGuiCond_Appearing);
         ImGui::Begin("Field");
         ImGui::SetWindowSize({500, 500}, ImGuiCond_Appearing);
         const Vec2 p = ImGui::GetCursorScreenPos();
-        ImGui::InvisibleButton("canvas", ImGui::GetContentRegionAvail(), ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight);
+        const Vec2 cursor = ImGui::GetCursorPos();
+        Vec2 available_space = ImGui::GetContentRegionAvail();
+        if(abs(available_space.x) <= 1) available_space.x = 1;
+        if(abs(available_space.y) <= 1) available_space.y = 1;
+        // https://github.com/ocornut/imgui/issues/3149
+        ImGui::InvisibleButton("canvas", available_space,
+            ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_AllowItemOverlap);
+        ImGui::SetItemAllowOverlap();
 
         const Vec2 mouse = ImGui::GetMousePos();
         if (selected == -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left))
@@ -155,16 +186,39 @@ struct Field {
                 if ((points[i] + p - mouse).abs() <= R)
                 selected = i;
         }
-        if (selected != -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        if (selected != -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left)){
+            const auto old_field_index = get_field_index(points[selected]);
             points[selected] = mouse - p;
+            recalculate_cell_for_point(old_field_index, selected);
+        }
         else if (selected != -1 && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
             selected = -1;
 
         const ImU32 col = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
-        for (ImVec2 point : points)
+        static bool debug_field = false;
+        ImGui::SetCursorPos(cursor);
+        ImGui::Checkbox("Enable field debugging", &debug_field);
+        for (int i = 0; i < points.size(); i++)
         {
-            draw_list->AddNgonFilled(p + point, R, col, 36);
+            draw_list->AddNgonFilled(p + points[i], R, col, 36);
+            if(debug_field){
+                string num = to_string(i);
+                draw_list->AddText(p + points[i] - Vec2{5, 5}, ImColor(0, 0, 255), num.c_str());
+            }
+        }
+
+        if(debug_field)
+        for (auto i = field.begin(); i != field.end(); i++){
+            if(i->first < 0 || i->first * cell_size > available_space.x) continue;
+            for(auto j = i->second.begin(); j != i->second.end(); j++){
+                if(j->first < 0 || j->first * cell_size > available_space.y) continue;
+                ImGui::SetCursorPos(cursor + Vec2{i->first * cell_size, j->first * cell_size});
+                {
+                    string num = to_string(j->second.size);
+                    ImGui::TextColored(ImVec4(0, 255, 0, 255), num.c_str());
+                }
+            }
         }
 
         ImGui::End();

@@ -37,13 +37,16 @@ struct linked_list_root
 
         size++;
         last = last->push_back(new_val);
+        return last;
     }
 
     void remove_val(T val) {
         if(size == 0) return;
-        auto buff = first;
-        for(size_t i = 0; i < size; i++) {
-            if(buff->val != val) continue;
+        for(auto buff = first; ; buff = buff->next) {
+            if(buff->val != val) {
+                if(buff == last) break;
+                continue;
+            }
             auto prev = buff->prev,
                 next = buff->next;
             if(buff != first) prev->next = next;
