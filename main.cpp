@@ -14,6 +14,7 @@
 #include "vec2.tpp"
 #include "utils.tpp"
 #include "field.h"
+#include "ggg.h"
 #include "linked_list.tpp"
 
 using namespace std;
@@ -137,6 +138,10 @@ int main(int, char **)
 
         field.do_tick(dt);
         field.draw();
+
+        ImGui::Begin("Testing");
+        ImGui::Text(to_string(five()).c_str());
+        ImGui::End();
 
         // 3. Show another simple window.
         if (show_another_window)
