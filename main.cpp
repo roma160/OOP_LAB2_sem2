@@ -97,8 +97,9 @@ int main(int, char **)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    Graph graph(5, {
-        {0, 1}, {1, 2}, {2, 3}, {3, 4}
+    Graph graph(6, {
+        {0, 1}
+        //{0, 1}, {1, 2}, {2, 3}, {3, 4}, {4, 5}
     });
 
     Field field(200);

@@ -32,6 +32,7 @@ private:
     friend bool operator==(const Field::FGraphLink& a, const Field::FGraphLink& b);
     friend bool operator!=(const Field::FGraphLink& a, const Field::FGraphLink& b);
 
+    bool stop_ticks = false;
     vector<FGraph> graphs;
     map<int, map<int, linked_list_root<FGraphLink>>> field;
 

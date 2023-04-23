@@ -52,12 +52,14 @@ inline bool operator!=(const Field::FGraphLink& a, const Field::FGraphLink& b)
 { return !(a == b); }
 
 Vec2 Field::def_compute_force(Vec2 delta, float force_distance, bool connected) {
-    if(connected) force_distance *= .75;
-    const float delta_abs = (delta.abs() - force_distance / 2) / 200;
-    return delta.norm() * 2000 * delta_abs * exp(-delta_abs);
+    const float delta_abs = (delta.abs() - force_distance / 2);
+    if(!connected) return delta.norm() * delta_abs * exp(-delta_abs);
+    else return delta.norm() * pow(delta_abs, 2) * sign(delta_abs);
 }
 
 void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, bool)){
+    if(stop_ticks) return;
+
     vector<vector<Vec2>> forces(graphs.size());
     for(int g = 0; g < graphs.size(); g++){
         const int n = graphs[g].connections.size();
@@ -66,7 +68,7 @@ void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, bool)){
             Vec2 &point = graphs[g].points[i.node_id];
 
             // Looking over connected verticies
-            for(int j = i.node_id; j < n; j++){
+            for(int j = 0; j < n; j++){
                 if(!graphs[g].connections[i.node_id][j]) continue;
                 Vec2 &point_b = graphs[g].points[j];
                 forces[i.graph_id][i.node_id] += force_function(
@@ -163,11 +165,15 @@ void Field::draw(){
     else if (selected.graph_id != -1 && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
         selected = {-1, 0};
 
-    const ImU32 col = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
-    ImDrawList *draw_list = ImGui::GetWindowDrawList();
     static bool debug_field = false;
     ImGui::SetCursorPos(cursor);
     ImGui::Checkbox("Enable field debugging", &debug_field);
+    
+    ImGui::SameLine();
+    ImGui::Checkbox("Stop ticks", &stop_ticks);
+
+    const ImU32 col = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
+    ImDrawList *draw_list = ImGui::GetWindowDrawList();
     for(int g = 0; g < graphs.size(); g++){
         // Drawing edges
         const int m = graphs[g].edges.size();
