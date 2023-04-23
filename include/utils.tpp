@@ -26,3 +26,11 @@ ostream& operator<<(ostream& stream, const vector<T> v){
     stream << v[v.size() - 1] << " }";
     return stream;
 }
+
+float sign(float a){
+    if(a > 0) return 1;
+    if(a < 0) return -1;
+    return 0;
+}
+
+int min(int a, int b) { return a > b ? b : a; }

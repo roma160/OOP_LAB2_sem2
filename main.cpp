@@ -135,6 +135,8 @@ int main(int, char **)
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
+        FieldGraphLink link(0, 0);
+
         field.do_tick(dt);
         field.draw();
 
