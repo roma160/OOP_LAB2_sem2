@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16.3)
 project(test_imgui)
 
 # set(BUILD_EXAMPLES TRUE)
-add_subdirectory("imgui-cmake")
+add_subdirectory("libs")
 
 set(SRC_FOLDER "${CMAKE_SOURCE_DIR}/src")
 file(GLOB_RECURSE "SOURCES" "${SRC_FOLDER}/**.cpp")
