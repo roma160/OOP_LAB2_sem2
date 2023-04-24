@@ -8,8 +8,13 @@
 
 using namespace std;
 
+Field::FGraph::Selection::Selection(bool is_selected, ImColor color):
+    is_selected(is_selected), color(color) {}
+
 Field::FGraph::FGraph(const Graph& graph, Vec2 point, float R): 
-    Graph(graph), points(connections.size()), speeds(connections.size()) {
+    Graph(graph), points(connections.size()), speeds(connections.size()),
+    points_sel(connections.size()), edges_sel(edges.size())
+{
     const int n = connections.size();
     for(int i = 0; i < n; i++) {
         const float alpha = 2 * i * M_PI / n;
@@ -36,7 +41,7 @@ void Field::add_to_field(const pair<int, int>& field_index, FGraphLink point_ind
     field[field_index.first][field_index.second].push_back(point_index);
 }
 
-void Field::add_graph(const Graph& graph, Vec2 point, float R) {
+int Field::add_graph(const Graph& graph, Vec2 point, float R) {
     graphs.push_back(FGraph(graph, point, R));
     const int graph_id = graphs.size() - 1;
     auto& fgraph = graphs[graph_id];
@@ -44,6 +49,7 @@ void Field::add_graph(const Graph& graph, Vec2 point, float R) {
         const auto field_index = get_field_index(fgraph.points[i]);
         add_to_field(field_index, { graph_id, i });
     }
+    return graph_id;
 }
 
 inline bool operator==(const Field::FGraphLink& a, const Field::FGraphLink& b)
@@ -119,7 +125,7 @@ void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, bool)){
     }
 }
 
-void Field::recalculate_cell_for_point(const pair<int, int>& old_field_index, FGraphLink point_index){
+void Field::recalculate_cell_for_point(const pair<int, int>& old_field_index, FGraphLink point_index) {
     const auto new_field_index = get_field_index(graphs[point_index.graph_id].points[point_index.node_id]);
     if(old_field_index != new_field_index){
         remove_from_field(old_field_index, point_index);
@@ -127,13 +133,13 @@ void Field::recalculate_cell_for_point(const pair<int, int>& old_field_index, FG
     }
 }
 
-void Field::draw(){
+void Field::display_window(){
     const float R = 18;
     static FGraphLink selected = {-1, 0};
 
     const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 20, main_viewport->WorkPos.y + 20), ImGuiCond_Appearing);
-    ImGui::Begin("Field");
+    ImGui::Begin("Field", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::SetWindowSize({500, 500}, ImGuiCond_Appearing);
     const Vec2 p = ImGui::GetCursorScreenPos();
     const Vec2 cursor = ImGui::GetCursorPos();
@@ -174,33 +180,43 @@ void Field::draw(){
     static bool debug_field = false;
     ImGui::SetCursorPos(cursor);
     ImGui::Checkbox("Enable field debugging", &debug_field);
-    
     ImGui::SameLine();
     ImGui::Checkbox("Stop ticks", &stop_ticks);
+    ImGui::SameLine();
+    ImGui::Checkbox("Show ids", &show_node_ids);
 
     const ImU32 col = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
+    const ImU32 green_col = ImColor(0.0f, 1.0f, 0.1f, 1.0f);
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
     for(int g = 0; g < graphs.size(); g++){
+        const auto& graph = graphs[g];
+
         // Drawing edges
-        const int m = graphs[g].edges.size();
+        const int m = graph.edges.size();
         for (int i = 0; i < m; i++){
             draw_list->AddLine(
-                p + graphs[g].points[graphs[g].edges[i].first],
-                p + graphs[g].points[graphs[g].edges[i].second],
+                p + graph.points[graph.edges[i].first],
+                p + graph.points[graph.edges[i].second],
                 col
             );
         }
 
         // Drawing nodes
-        const int n = graphs[g].connections.size();
-        for (FGraphLink i = {0, g}; i.node_id < n; i.node_id++)
+        const int n = graph.connections.size();
+        for (int i = 0; i < n; i++)
         {
-            const Vec2& point = graphs[i.graph_id].points[i.node_id];
+            const Vec2& point = graph.points[i];
             // TODO: implement random coloring
             draw_list->AddNgonFilled(p + point, R, col, 36);
-            if(debug_field){
-                string num = to_string(i.node_id);
-                draw_list->AddText(p + point - Vec2{5, 5}, ImColor(0, 0, 255), num.c_str());
+            if(graph.points_sel[i].is_selected)
+                draw_list->AddCircle(p + point, R + 1, graph.points_sel[i].color, 36, 5.0f);
+
+            if(show_node_ids){
+                string num = to_string(i);
+                draw_list->AddText(
+                    p + point - (Vec2) ImGui::CalcTextSize(num.c_str()) / 2,
+                    ImColor(0, 0, 255), num.c_str()
+                );
             }
         }
     }
@@ -220,3 +236,24 @@ void Field::draw(){
 
     ImGui::End();
 }
+
+
+void Field::select_point(int point_id, int graph_id, ImColor color) {
+    auto& selection = graphs[graph_id].points_sel[point_id];
+    if(selection.color != color) selection.color = color;
+    selection.is_selected = true;
+}
+void Field::disselect_point(int point_id, int graph_id) {
+    auto& selection = graphs[graph_id].points_sel[point_id];
+    selection.is_selected = false;
+}
+void Field::toggle_point_select(int point_id, int graph_id, ImColor color) {
+    auto& selection = graphs[graph_id].points_sel[point_id];
+    if(selection.is_selected) selection.is_selected = false;
+    else {
+        if(selection.color != color) selection.color = color;
+        selection.is_selected = true;
+    }
+}
+
+const vector<Field::FGraph>& Field::get_graphs() const { return graphs; }

@@ -13,7 +13,7 @@
 
 #include "utils.tpp"
 #include "field.h"
-#include "linked_list.tpp"
+#include "control_window.h"
 
 using namespace std;
 
@@ -93,8 +93,6 @@ int main(int, char **)
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     Graph graph(vector<vector<bool>>(6, vector<bool>(6, true)));
@@ -129,22 +127,13 @@ int main(int, char **)
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
+        // Main window rendering pipeline
+        ImGui::ShowDemoWindow();
 
         field.do_tick(dt);
-        field.draw();
+        field.display_window();
 
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window); // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
-            ImGui::End();
-        }
+        display_control_window(field);
 
         // Rendering
         ImGui::Render();

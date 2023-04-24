@@ -14,11 +14,21 @@
 using namespace std;
 
 class Field {
-private:
+public:
     struct FGraph: Graph
     {
+        struct Selection {
+            bool is_selected;
+            ImColor color;
+
+            Selection(bool is_selected = false, ImColor color = ImColor());
+        };
+
         vector<Vec2> points;
         vector<Vec2> speeds;
+
+        vector<Selection> points_sel, edges_sel;
+
         FGraph(const Graph& graph, Vec2 point, float R);
     };
 
@@ -32,7 +42,10 @@ private:
     friend bool operator==(const Field::FGraphLink& a, const Field::FGraphLink& b);
     friend bool operator!=(const Field::FGraphLink& a, const Field::FGraphLink& b);
 
+private:
     bool stop_ticks = false;
+    bool show_node_ids = true;
+
     vector<FGraph> graphs;
     map<int, map<int, linked_list_root<FGraphLink>>> field;
 
@@ -47,10 +60,16 @@ public:
 
     Field(float cell_size);
 
-    void add_graph(const Graph& graph, Vec2 point = {100, 100}, float R = 100);
+    int add_graph(const Graph& graph, Vec2 point = {100, 100}, float R = 100);
 
     static Vec2 def_compute_force(Vec2 delta, float force_distance, bool connected);
     void do_tick(float dt, Vec2 (*force_function)(Vec2, float, bool) = &def_compute_force);
 
-    void draw();
+    void display_window();
+
+    void toggle_point_select(int point_id, int graph_id = 0, ImColor color = ImColor(1.0f, 0.0f, 0.0f, 1.0f));
+    void select_point(int point_id, int graph_id = 0, ImColor color = ImColor(1.0f, 0.0f, 0.0f, 1.0f));
+    void disselect_point(int point_id, int graph_id = 0);
+
+    const vector<FGraph>& get_graphs() const;
 };
