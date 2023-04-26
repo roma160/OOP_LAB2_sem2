@@ -15,7 +15,15 @@ using namespace std;
 
 class Field {
 public:
-    struct FGraph: Graph
+    struct FEdge: Edge {
+        bool valid;
+        string first_buff, second_buff;
+
+        FEdge();
+        FEdge(int first, int second);
+    };
+
+    struct FGraph: Graph<>
     {
         struct Selection {
             bool is_selected;
@@ -29,7 +37,7 @@ public:
 
         vector<Selection> points_sel, edges_sel;
 
-        FGraph(const Graph& graph, Vec2 point, float R);
+        FGraph(const Graph<>& graph, Vec2 point, float R);
     };
 
     struct FGraphLink
@@ -60,7 +68,7 @@ public:
 
     Field(float cell_size);
 
-    int add_graph(const Graph& graph, Vec2 point = {100, 100}, float R = 100);
+    int add_graph(const Graph<>& graph, Vec2 point = {100, 100}, float R = 100);
 
     static Vec2 def_compute_force(Vec2 delta, float force_distance, bool connected);
     void do_tick(float dt, Vec2 (*force_function)(Vec2, float, bool) = &def_compute_force);

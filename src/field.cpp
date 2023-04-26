@@ -11,7 +11,7 @@ using namespace std;
 Field::FGraph::Selection::Selection(bool is_selected, ImColor color):
     is_selected(is_selected), color(color) {}
 
-Field::FGraph::FGraph(const Graph& graph, Vec2 point, float R): 
+Field::FGraph::FGraph(const Graph<>& graph, Vec2 point, float R): 
     Graph(graph), points(connections.size()), speeds(connections.size()),
     points_sel(connections.size()), edges_sel(edges.size())
 {
@@ -41,7 +41,7 @@ void Field::add_to_field(const pair<int, int>& field_index, FGraphLink point_ind
     field[field_index.first][field_index.second].push_back(point_index);
 }
 
-int Field::add_graph(const Graph& graph, Vec2 point, float R) {
+int Field::add_graph(const Graph<>& graph, Vec2 point, float R) {
     graphs.push_back(FGraph(graph, point, R));
     const int graph_id = graphs.size() - 1;
     auto& fgraph = graphs[graph_id];

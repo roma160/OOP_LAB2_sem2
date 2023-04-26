@@ -2,6 +2,7 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "misc/cpp/imgui_stdlib.h"
 
 #include "vec2.h"
 
@@ -56,6 +57,19 @@ void display_control_window(Field& field) {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 ImGui::Text("Edges");
+                for(int i = 0; i < m; i++){
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    //ImGui::InputText(,)
+                    if(ImGui::IsItemHovered() && hovered.graph_id == -1){
+                        hovered = l{g, i};
+                        field.select_point(i, g);
+                    }
+                    else if(!ImGui::IsItemHovered() && hovered == l{g, i}) {
+                        field.disselect_point(i, g);
+                        hovered.graph_id = -1;
+                    }
+                }
 
                 ImGui::TreePop();
             }
