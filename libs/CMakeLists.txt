@@ -19,7 +19,7 @@ target_sources(IMGUI PUBLIC
 
                 PRIVATE
                     ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-                    ${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp
+                    ${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
                 )
 
 target_include_directories( IMGUI
@@ -99,6 +99,6 @@ else()
     target_link_libraries(IMGUI PUBLIC ${OPENGL_LIBRARIES})
 endif()
 
-target_link_libraries(IMGUI PUBLIC SDL2-static SDL2main ${CMAKE_DL_LIBS})
+target_link_libraries(IMGUI PUBLIC SDL3-static ${CMAKE_DL_LIBS})
 
 
