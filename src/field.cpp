@@ -1,5 +1,6 @@
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "misc/cpp/imgui_stdlib.h"
 
 #include "field.h"
 #include "utils.tpp"
@@ -25,7 +26,7 @@ Field::FGraph::FGraph(const Graph& graph, Vec2 point, float R):
 Field::FGraphLink::FGraphLink(int graph_id, int node_id): graph_id(graph_id), node_id(node_id) {}
 
 
-Field::Field(float cell_size): cell_size(cell_size), graphs() {}
+Field::Field(float cell_size, Vec2 bounds): cell_size(cell_size), bounds(bounds), graphs() {}
 
 pair<int, int> Field::get_field_index(const Vec2& point) const {
     return {
@@ -58,19 +59,31 @@ inline bool operator==(const Field::FGraphLink& a, const Field::FGraphLink& b)
 inline bool operator!=(const Field::FGraphLink& a, const Field::FGraphLink& b)
 { return !(a == b); }
 
-Vec2 Field::def_compute_force(Vec2 delta, float force_distance, bool connected) {
-    if(!connected){
+Vec2 Field::def_compute_force(Vec2 delta, float force_distance, ForceType type) {
+    if(type == Node){
         const float x = (delta.abs() - force_distance);
         if (x >= 0) return delta.norm() * sqrt(abs(x)) * 10;
         else return delta.norm() * pow(x / 10, 3);
     }
-    else{
+    else if(type == ConnectedNode){
         const float x = (delta.abs() - force_distance / 2);
         return delta.norm() * pow(x, 2) * sign(x);
     }
+    else {
+        float x = 0;
+        if(type == UpBound) x += delta.y;
+        else if (type == DownBound) x += -delta.y;
+        else if (type == LeftBound) x += delta.x;
+        else if (type == RightBound) x += -delta.x;
+        float s = sign(x);
+        x -= force_distance / 2;
+        
+        if (x > 0) return Vec2();
+        return delta.norm() * (pow(x, 2) * s);
+    }
 }
 
-void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, bool)){
+void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, ForceType)){
     if(stop_ticks) return;
 
     vector<vector<Vec2>> forces(graphs.size());
@@ -85,7 +98,7 @@ void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, bool)){
                 if(i.node_id == j || !graphs[g].connections[i.node_id][j]) continue;
                 Vec2 &point_b = graphs[g].points[j];
                 forces[i.graph_id][i.node_id] += force_function(
-                    point_b - point, cell_size, true);
+                    point_b - point, cell_size, ConnectedNode);
             }
 
             // Looking in the adjacent squares.
@@ -99,13 +112,18 @@ void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, bool)){
                     if (buff->val == i || graphs[g].connections[i.node_id][buff->val.node_id]) continue;
                     const Vec2 &point_b = graphs[buff->val.graph_id].points[buff->val.node_id];
                     forces[i.graph_id][i.node_id] += force_function(
-                        point_b - point, cell_size, false);
+                        point_b - point, cell_size, Node);
                 }
             }
 
             // Looking over walls
-            // forces[i.graph_id][i.node_id] += 
-            //     force_function({})
+            if(bound_forces){
+                forces[i.graph_id][i.node_id] +=
+                    force_function({point.x, 0}, cell_size, LeftBound) + 
+                    force_function({point.x - bounds.x, 0}, cell_size, RightBound) + 
+                    force_function({0, point.y}, cell_size, UpBound) +
+                    force_function({0, point.y - bounds.y}, cell_size, DownBound);
+            }
         }
     }
 
@@ -145,7 +163,9 @@ void Field::display_window(){
     const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 20, main_viewport->WorkPos.y + 20), ImGuiCond_Appearing);
     ImGui::Begin("Field", nullptr, ImGuiWindowFlags_NoCollapse);
-    ImGui::SetWindowSize({500, 500}, ImGuiCond_Appearing);
+    ImGui::SetWindowSize(bounds, ImGuiCond_Appearing);
+    bounds = ImGui::GetWindowSize();
+
     const Vec2 p = ImGui::GetCursorScreenPos();
     const Vec2 cursor = ImGui::GetCursorPos();
     Vec2 available_space = ImGui::GetContentRegionAvail();
@@ -189,6 +209,13 @@ void Field::display_window(){
     ImGui::Checkbox("Stop ticks", &stop_ticks);
     ImGui::SameLine();
     ImGui::Checkbox("Show ids", &show_node_ids);
+    ImGui::SameLine();
+    {
+        string text = bounds.to_string();
+        ImGui::Text("Size: %s", text.c_str());
+    }
+    ImGui::SameLine();
+    ImGui::Checkbox("Bounds", &bound_forces);
 
     const ImU32 col = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
     const ImU32 green_col = ImColor(0.0f, 1.0f, 0.1f, 1.0f);

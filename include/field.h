@@ -39,12 +39,15 @@ public:
         FGraphLink(int graph_id, int node_id);
     };
 
+    enum ForceType { Node, ConnectedNode, UpBound, DownBound, LeftBound, RightBound };
+
     friend bool operator==(const Field::FGraphLink& a, const Field::FGraphLink& b);
     friend bool operator!=(const Field::FGraphLink& a, const Field::FGraphLink& b);
 
 private:
     bool stop_ticks = false;
     bool show_node_ids = true;
+    bool bound_forces = true;
 
     vector<FGraph> graphs;
     map<int, map<int, linked_list_root<FGraphLink>>> field;
@@ -57,13 +60,14 @@ private:
 
 public:
     const float cell_size;
+    Vec2 bounds;
 
-    Field(float cell_size);
+    Field(float cell_size, Vec2 bounds = Vec2{500, 500});
 
-    int add_graph(const Graph& graph, Vec2 point = {100, 100}, float R = 100);
+    int add_graph(const Graph& graph, Vec2 point = {200, 200}, float R = 100);
 
-    static Vec2 def_compute_force(Vec2 delta, float force_distance, bool connected);
-    void do_tick(float dt, Vec2 (*force_function)(Vec2, float, bool) = &def_compute_force);
+    static Vec2 def_compute_force(Vec2 delta, float force_distance, ForceType type);
+    void do_tick(float dt, Vec2 (*force_function)(Vec2, float, ForceType) = &def_compute_force);
 
     void display_window();
 
