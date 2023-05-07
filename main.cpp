@@ -14,6 +14,7 @@
 #include "utils.tpp"
 #include "field.h"
 #include "control_window.h"
+#include "algorithms_window.h"
 
 using namespace std;
 
@@ -133,7 +134,8 @@ int main(int, char **)
         field.do_tick(dt);
         field.display_window();
 
-        display_control_window(field);
+        //display_control_window(field);
+        display_algorithms_window(field);
 
         // Rendering
         ImGui::Render();

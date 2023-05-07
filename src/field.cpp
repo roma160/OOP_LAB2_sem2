@@ -5,6 +5,7 @@
 #include "utils.tpp"
 
 #include <math.h>
+#include <iostream>
 
 using namespace std;
 
@@ -101,6 +102,10 @@ void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, bool)){
                         point_b - point, cell_size, false);
                 }
             }
+
+            // Looking over walls
+            // forces[i.graph_id][i.node_id] += 
+            //     force_function({})
         }
     }
 
@@ -152,7 +157,7 @@ void Field::display_window(){
     ImGui::SetItemAllowOverlap();
 
     const Vec2 mouse = ImGui::GetMousePos();
-    if (selected.graph_id == -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+    if (selected.graph_id == -1 && ImGui::IsItemClicked(ImGuiMouseButton_Left))
     {
         auto field_index = get_field_index(mouse);
         int shift_x = 2 * fmod(mouse.x, cell_size) >= cell_size;
@@ -174,7 +179,7 @@ void Field::display_window(){
         point = mouse - p;
         recalculate_cell_for_point(old_field_index, selected);
     }
-    else if (selected.graph_id != -1 && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+    else if (selected.graph_id != -1 && !ImGui::IsItemClicked(ImGuiMouseButton_Left))
         selected = {-1, 0};
 
     static bool debug_field = false;
