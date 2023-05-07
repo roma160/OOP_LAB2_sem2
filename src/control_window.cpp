@@ -6,8 +6,18 @@
 
 #include <vector>
 #include <string>
+#include <iostream>
 
 #include "vec2.h"
+
+struct menu_edge {
+    string from, to;
+    int from, to;
+
+    void on_changed(Graph& graph) {
+        
+    }
+};
 
 void display_control_window(Field& field) {
     ImGui::Begin("Control window", nullptr, ImGuiWindowFlags_NoCollapse);
@@ -26,7 +36,7 @@ void display_control_window(Field& field) {
         static vector<vector<string>> input_buffer(graphs.size());
         static int init_buffer = [&](){
             for(int g = 0; g < graphs.size(); g++){
-                const int m = graphs[g].edges.size();
+                const int m = graphs[g].points.size() * (graphs[g].points.size() - 1) / 2;
                 input_buffer[g].resize(2 * m);
                 for(int i = 0; i < m; i++){
                     input_buffer[g][2*i] = to_string(graphs[g].edges[i].first);
@@ -84,6 +94,9 @@ void display_control_window(Field& field) {
                         ImGui::PushItemWidth(input_size);
                         ImGui::InputText("", &input_buffer[g][j], 
                             ImGuiInputTextFlags_CharsDecimal);
+                        if(ImGui::IsItemEdited()) {
+                            cout<<"HHHH";
+                        }
                         ImGui::PopID();
                     };
                     add_input_text(2*i, g, input_size);

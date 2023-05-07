@@ -22,4 +22,21 @@ struct Graph
             connections[edge.second][edge.first] = true;
         }
     }
+
+    void toggle_edge(int from, int to, bool to_connect) {
+        if(connections[from][to] == to_connect) return;
+        connections[from][to] = to_connect;
+
+        if(!to_connect){
+            for(int i = 0; i < edges.size(); i++)
+                if((edges[i].first == from && edges[i].second == to) || 
+                    (edges[i].second == from && edges[i].first == to)){
+                    edges.emplace(edges.begin() + i);
+                    break;
+                }
+        }
+        else {
+
+        }
+    }
 };

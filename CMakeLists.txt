@@ -8,6 +8,6 @@ set(SRC_FOLDER "${CMAKE_SOURCE_DIR}/src")
 set(INCLUDE_FOLDER "${CMAKE_SOURCE_DIR}/include")
 file(GLOB_RECURSE "SOURCES" "${SRC_FOLDER}/**.cpp")
 
-add_executable(main WIN32 "${CMAKE_SOURCE_DIR}/main.cpp" "${SOURCES}")
+add_executable(main "${CMAKE_SOURCE_DIR}/main.cpp" "${SOURCES}")
 target_include_directories(main PRIVATE "${INCLUDE_FOLDER}")
 target_link_libraries(main PRIVATE IMGUI)
