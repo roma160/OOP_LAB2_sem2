@@ -1,6 +1,10 @@
 #pragma once
 
 #include <vector>
+#include <set>
+#include <string>
+#include <sstream>
+#include <regex>
 
 using namespace std;
 
@@ -21,5 +25,34 @@ struct Graph
             connections[edge.first][edge.second] = true;
             connections[edge.second][edge.first] = true;
         }
+    }
+
+    string to_string() const {
+        stringstream ss;
+        for(auto edge : edges)
+            ss << edge.first << " " << edge.second << "\n";
+        return ss.str();
+    }
+
+    static bool from_string(const string& s, Graph& graph) {
+        int n = -1;
+        set<pair<int, int>> edges;
+        stringstream ss(s);
+        for (string line; getline(ss, line); ) {
+            if(line.empty()) continue;
+            static const regex edge("(\\d+)\\s+(\\d+)");
+            smatch match;
+            if(!regex_search(line, match, edge)) continue;
+            if(match.size() != 3) continue;
+            pair<int, int> to_push(stoi(match[1]), stoi(match[2]));
+            if (to_push.first > to_push.second)
+                swap(to_push.first, to_push.second);
+            edges.insert(to_push);
+            if (n < to_push.first) n = to_push.first;
+            if (n < to_push.second) n = to_push.second;
+        }
+        if(n == -1) return false;
+        graph = Graph(n + 1, {edges.begin(), edges.end()});
+        return true;
     }
 };

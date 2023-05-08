@@ -53,6 +53,14 @@ int Field::add_graph(const Graph& graph, Vec2 point, float R) {
     }
     return graph_id;
 }
+void Field::remove_graph(int index) {
+    auto& fgraph = graphs[index];
+    for(int i = 0; i < fgraph.connections.size(); i++){
+        const auto field_index = get_field_index(fgraph.points[i]);
+        remove_from_field(field_index, { index, i });
+    }
+    graphs.erase(graphs.begin() + index);
+}
 
 inline bool operator==(const Field::FGraphLink& a, const Field::FGraphLink& b)
 { return a.graph_id == b.graph_id && a.node_id == b.node_id; }

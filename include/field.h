@@ -65,6 +65,7 @@ public:
     Field(float cell_size, Vec2 bounds = Vec2{500, 500});
 
     int add_graph(const Graph& graph, Vec2 point = {200, 200}, float R = 100);
+    void remove_graph(int index);
 
     static Vec2 def_compute_force(Vec2 delta, float force_distance, ForceType type);
     void do_tick(float dt, Vec2 (*force_function)(Vec2, float, ForceType) = &def_compute_force);
