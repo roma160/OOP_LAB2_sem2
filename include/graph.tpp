@@ -53,7 +53,7 @@ struct Graph
     string to_string() const {
         stringstream ss;
         for(auto edge : edges)
-            ss << edge.first << " " << edge.second << "\n";
+            ss << edge.first << " " << edge.second << " " << edge.weight << "\n";
         return ss.str();
     }
 
@@ -63,16 +63,15 @@ struct Graph
         stringstream ss(s);
         for (string line; getline(ss, line); ) {
             if(line.empty()) continue;
-            static const regex edge("(\\d+)\\s+(\\d+)");
+            static const regex edge("(\\d+)\\s+(\\d+)\\s*(\\d*)");
             smatch match;
             if(!regex_search(line, match, edge)) continue;
             if(match.size() != 3 && match.size() != 4) continue;
 
-            Edge to_push;
-            if(match.size() == 3)
-                to_push = {stoi(match[1]), stoi(match[2])};
-            else if(match.size() == 4)
-                to_push = {stoi(match[1]), stoi(match[2]), stoi(match[3])};
+            int weight;
+            if(match[3].str().empty()) weight = 1;
+            else weight = stoi(match[3]);
+            Edge to_push = {stoi(match[1]), stoi(match[2]), weight};
             
             if (to_push.first > to_push.second)
                 swap(to_push.first, to_push.second);
