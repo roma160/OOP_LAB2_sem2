@@ -66,4 +66,37 @@ namespace algos {
         vector<bool> visited(n);
         _dfs(field, graph, graph_id, n, visited, start_point, -1);
     }
+
+    // Task 3
+    Graph prims_min_tree(Graph& graph, int start_point = 0) {
+        const int n = graph.connections.size();
+        if(n == 0) return Graph();
+
+        Graph ret(n);
+        vector<bool> visited(n);
+        queue<int> q;
+        q.push(start_point);
+        visited[start_point] = true;
+        while (!q.empty())
+        {
+            int buff = q.front();
+            q.pop();
+
+            int min_w = -1, min_i = -1;
+            for(int i = 0; i < n; i++)
+                if(graph.connections[buff][i] && !visited[i] && 
+                    (min_w == -1 || min_w > graph.connections[buff][i].weight)){
+                    min_w = graph.connections[buff][i].weight;
+                    min_i = i;
+                }
+            
+            if(min_i == -1) continue;
+            q.push(min_i);
+            visited[min_i] = true;
+
+            ret.add_edge(buff, min_i);
+        }
+
+        return ret;
+    }
 }

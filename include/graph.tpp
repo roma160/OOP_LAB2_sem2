@@ -48,13 +48,21 @@ struct Graph
     Graph(vector<vector<Connection>>&& connections): connections(move(connections)), edges(0) {
         for(int i = 0; i < this->connections.size(); i++)
         for(int j = i + 1; j < this->connections[i].size(); j++)
-            if(this->connections[i][j]) edges.push_back({i, j});
+            if(this->connections[i][j]) edges.push_back(
+                {i, j, this->connections[i][j].weight});
     }
     Graph(int n, vector<Edge>&& edges): connections(n, vector<Connection>(n)), edges(move(edges)) {
         for(auto& edge : this->edges) {
-            connections[edge.first][edge.second] = true;
-            connections[edge.second][edge.first] = true;
+            connections[edge.first][edge.second] = edge.weight;
+            connections[edge.second][edge.first] = edge.weight;
         }
+    }
+
+    void add_edge(int from, int to, int weight = 1) {
+        if(from > to) swap(from, to);
+        edges.push_back(Edge(from, to, weight));
+        connections[from][to] = weight;
+        connections[to][from] = weight;
     }
 
     int get_edge_id(int from, int to) {

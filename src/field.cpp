@@ -250,6 +250,8 @@ void Field::display_window(){
     ImGui::Checkbox("node_i", &show_node_ids);
     ImGui::SameLine();
     ImGui::Checkbox("edge_w", &show_edge_weights);
+    ImGui::SameLine();
+    ImGui::Checkbox("only_sel", &show_only_selected_edges);
 
     const ImU32 node_color = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
     const ImU32 edge_color = ImColor(.5f, .5f, .5f, 1.0f);
@@ -268,13 +270,16 @@ void Field::display_window(){
                     graph.edges_sel[i].color, 3.0f
                 );
             }
-            else draw_list->AddLine(a, b, edge_color);
+            else if(!show_only_selected_edges)
+                draw_list->AddLine(a, b, edge_color);
 
-            if(show_edge_weights) {
+            if(show_edge_weights && (graph.edges_sel[i].is_selected || !show_only_selected_edges)) {
                 string num = to_string(graph.edges[i].weight);
-                draw_list->AddText(
-                    (a + b) / 2 - (Vec2) ImGui::CalcTextSize(num.c_str()) / 2,
-                    ImColor(0, 255, 255), num.c_str()
+                const auto calc_size = ImGui::CalcTextSize(num.c_str());
+                const auto text_p1 = (a + b) / 2 - (Vec2) calc_size / 2;
+                draw_list->AddRectFilled(text_p1, text_p1 + calc_size, edge_color);
+                draw_list->AddText(text_p1,
+                    ImColor(0, 0, 0), num.c_str()
                 );
             }
         }

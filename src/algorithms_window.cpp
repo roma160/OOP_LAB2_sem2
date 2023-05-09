@@ -44,8 +44,8 @@ void display_algorithms_window(Field& field) {
     }
 
     // Algortithms ComboBox
-    static const vector<string> algorithms{ "1. BFS", "2. DFS" };
-    static int item_current_idx = 1;
+    static const vector<string> algorithms{ "1. BFS", "2. DFS", "3. Prim's min tree" };
+    static int item_current_idx = algorithms.size() - 1;
     if (ImGui::BeginCombo("Algorithm", algorithms[item_current_idx].c_str()))
     {
         for (int n = 0; n < algorithms.size(); n++)
@@ -67,6 +67,18 @@ void display_algorithms_window(Field& field) {
         }
         else if(item_current_idx == 1) {
             algos::dfs(field, 0, 0);
+        }
+        else if(item_current_idx == 2) {
+            const int start_point = 0;
+            Graph& graph = *field.get_graph(0);
+            auto res = algos::prims_min_tree(graph, start_point);
+
+            field.disselect_all_edges();
+            field.disselect_all_points();
+            field.select_point(start_point, 0);
+            for(auto edge : res.edges) {
+                field.select_edge(graph.get_edge_id(edge.first, edge.second), 0);
+            }
         }
     }
 

@@ -54,6 +54,7 @@ private:
     bool use_ticks = true;
     bool show_node_ids = true;
     bool show_edge_weights = true;
+    bool show_only_selected_edges = false;
     bool bound_forces = true;
     float scale = 1.0f;
 
