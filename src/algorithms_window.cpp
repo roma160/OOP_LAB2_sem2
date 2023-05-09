@@ -61,11 +61,12 @@ void display_algorithms_window(Field& field) {
     }
 
     static bool incorrect_input = false;
+    static string log = "";
 
     // Algortithms ComboBox
     static const vector<string> algorithms{
         "1. BFS", "2. DFS", "3. Prim's min tree",
-        "4. Dijkstra's min path"
+        "4. Dijkstra's min path", "5. A* min path"
     };
     static int item_current_idx = algorithms.size() - 1;
     if (ImGui::BeginCombo("Algorithm", algorithms[item_current_idx].c_str()))
@@ -76,6 +77,18 @@ void display_algorithms_window(Field& field) {
             if (ImGui::Selectable(algorithms[n].c_str(), is_selected)){
                 item_current_idx = n;
                 incorrect_input = false;
+                log.clear();
+
+                switch (item_current_idx)
+                {
+                case 4:
+                    field.set_show_actual_distance(true);
+                    break;
+                
+                default:
+                    field.set_show_actual_distance(false);
+                    break;
+                }
             }
             if (is_selected) ImGui::SetItemDefaultFocus();
         }
@@ -125,10 +138,30 @@ void display_algorithms_window(Field& field) {
                 }
             }
         }
+        else if(item_current_idx == 4) {
+            int from = -1, to = -1;
+            if(!get_int(from_node_str, from) || !get_int(to_node_str, to))
+                incorrect_input = true;
+            else {
+                Graph& graph = *field.get_graph(0);
+                stringstream log_stream;
+                auto res = algos::astar_path(field, 0, from, to, &log_stream);
+                log = log_stream.str();
+
+                field.disselect_all_edges();
+                field.disselect_all_points();
+                field.select_point(from, 0, ImColor(1.0f, .0f, .0f, 1.0f));
+                field.select_point(to, 0, ImColor(.0f, 1.0f, .0f, 1.f));
+                for(int i = 1; i < res.size(); i++) {
+                    field.select_edge(graph.get_edge_id(res[i-1], res[i]), 0);
+                }
+            }
+        }
     }
     switch (item_current_idx)
     {
     case 3:
+    case 4:
         const float x = ImGui::GetContentRegionAvail().x / 2 - 10;
         ImGui::SetNextItemWidth(x - ImGui::CalcTextSize("Start point").x);
         ImGui::InputText("Start point", &from_node_str, ImGuiInputTextFlags_CharsDecimal);
@@ -136,6 +169,10 @@ void display_algorithms_window(Field& field) {
         ImGui::SetNextItemWidth(x - ImGui::CalcTextSize("End point").x);
         ImGui::InputText("End point", &to_node_str, ImGuiInputTextFlags_CharsDecimal);
         break;
+    }
+
+    if(!log.empty()){
+        ImGui::Text("The checked nodes:\n%s", log.c_str());
     }
 
     ImGui::End();

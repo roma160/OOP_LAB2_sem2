@@ -252,6 +252,8 @@ void Field::display_window(){
     ImGui::Checkbox("edge_w", &show_edge_weights);
     ImGui::SameLine();
     ImGui::Checkbox("only_sel", &show_only_selected_edges);
+    ImGui::SameLine();
+    ImGui::Checkbox("real_dist", &show_actual_distance);
 
     const ImU32 node_color = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
     const ImU32 edge_color = ImColor(.5f, .5f, .5f, 1.0f);
@@ -274,7 +276,10 @@ void Field::display_window(){
                 draw_list->AddLine(a, b, edge_color);
 
             if(show_edge_weights && (graph.edges_sel[i].is_selected || !show_only_selected_edges)) {
-                string num = to_string(graph.edges[i].weight);
+                string num;
+                if(!show_actual_distance) num = to_string(graph.edges[i].weight);
+                else num = to_string((int) round(get_field_distance(
+                    g, graph.edges[i].first, graph.edges[i].second)));
                 const auto calc_size = ImGui::CalcTextSize(num.c_str());
                 const auto text_p1 = (a + b) / 2 - (Vec2) calc_size / 2;
                 draw_list->AddRectFilled(text_p1, text_p1 + calc_size, edge_color);
@@ -368,3 +373,11 @@ void Field::toggle_edge_select(int edge_id, int graph_id, ImColor color) {
 
 const vector<Field::FGraph>& Field::get_graphs() const { return graphs; }
 Field::FGraph* Field::get_graph(int graph_index) { return &graphs[graph_index]; }
+
+float Field::get_field_distance(int graph_id, int from_id, int to_id)
+{
+    const auto& points = graphs[graph_id].points;
+    return (points[from_id] - points[to_id]).abs();
+}
+
+void Field::set_show_actual_distance(bool val) { show_actual_distance = val; }

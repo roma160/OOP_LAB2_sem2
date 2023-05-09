@@ -6,6 +6,10 @@
 #include <stack>
 #include <vector>
 #include <algorithm>
+#include <iostream>
+#include <ostream>
+
+using namespace std;
 
 namespace algos {
     // TASK 1
@@ -136,5 +140,51 @@ namespace algos {
         }
 
         return distances[to].path;
+    }
+
+    // Task 5
+    vector<int> astar_path(Field& field, int graph_id = 0, int from = 0, int to = -1, ostream* log = nullptr) {
+        const Graph& graph = *field.get_graph(graph_id);
+        const int n = graph.connections.size();
+        if(n == 0) return vector<int>();
+        if(to == -1) to = n - 1;
+        
+        vector<float> distances(n, -1);
+        vector<int> cameFrom(n, -1);
+        auto cmp = [&](int a, int b) { 
+            float ad = distances[a] + field.get_field_distance(graph_id, a, to);
+            float bd = distances[b] + field.get_field_distance(graph_id, b, to);
+            return ad > bd; 
+        };
+        priority_queue<int, vector<int>, decltype(cmp)> q(cmp);
+        distances[from] = 0;
+        q.push(from);
+        while(!q.empty()) {
+            int buff = q.top();
+            if(buff == to) break;
+            if(log != nullptr)
+                *log<<"Node: "<<buff<<" (d="<<distances[buff]<<")\n";
+            q.pop();
+            for(int i = 0; i < n; i++)
+                if(graph.connections[i][buff] && (
+                    distances[i] == -1 || 
+                    distances[i] > distances[buff] + 
+                    field.get_field_distance(graph_id, i, buff))
+                ) {
+                    distances[i] = distances[buff] + 
+                        field.get_field_distance(graph_id, i, buff);
+                    cameFrom[i] = buff;
+                    q.push(i);
+                }
+        }
+
+        vector<int> ret;
+        int last = to;
+        ret.push_back(to);
+        while(last != from) {
+            last = cameFrom[last];
+            ret.push_back(last);
+        }
+        return ret;
     }
 }

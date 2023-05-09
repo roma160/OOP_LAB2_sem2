@@ -55,6 +55,7 @@ private:
     bool show_node_ids = true;
     bool show_edge_weights = true;
     bool show_only_selected_edges = false;
+    bool show_actual_distance = false;
     bool bound_forces = true;
     float scale = 1.0f;
 
@@ -97,4 +98,8 @@ public:
 
     const vector<FGraph>& get_graphs() const;
     FGraph* get_graph(int graph_index);
+
+    float get_field_distance(int graph_id, int from_id, int to_id);
+
+    void set_show_actual_distance(bool val);
 };
