@@ -100,7 +100,7 @@ int main(int, char **)
 
     Field field(200);
     field.add_graph(graph);
-    double start_time = 0;
+    double start_time = time();
     double dt = 0;
 
     // Main loop
@@ -121,7 +121,6 @@ int main(int, char **)
             if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(window))
                 done = true;
         }
-        start_time = time();
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -131,7 +130,10 @@ int main(int, char **)
         // Main window rendering pipeline
         ImGui::ShowDemoWindow();
 
-        field.do_tick(dt);
+        dt = time() - start_time;
+        // But the actual dt could also be used
+        field.do_tick(.02);
+        start_time = time();
         field.display_window();
 
         //display_control_window(field);
@@ -144,8 +146,6 @@ int main(int, char **)
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(window);
-
-        dt = time() - start_time;
     }
 
     // Cleanup
