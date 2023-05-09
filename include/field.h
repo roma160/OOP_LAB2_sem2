@@ -14,6 +14,10 @@
 using namespace std;
 
 class Field {
+private:
+    const static Vec2 DEF_GRAPH_LOC;
+    const static float DEF_GRAPH_R;
+
 public:
     struct FGraph: Graph
     {
@@ -29,7 +33,9 @@ public:
 
         vector<Selection> points_sel, edges_sel;
 
-        FGraph(const Graph& graph, Vec2 point, float R);
+        FGraph(const Graph& graph, Vec2 point = DEF_GRAPH_LOC, float R = DEF_GRAPH_R);
+
+        void reset_points_pos(Vec2 point = DEF_GRAPH_LOC, float R = DEF_GRAPH_R);
     };
 
     struct FGraphLink
@@ -45,9 +51,15 @@ public:
     enum ForceType { Node, ConnectedNode, UpBound, DownBound, LeftBound, RightBound };
 
 private:
-    bool stop_ticks = false;
+    bool use_ticks = true;
     bool show_node_ids = true;
+    bool show_edge_weights = true;
     bool bound_forces = true;
+    float scale = 1.0f;
+
+    bool was_middle_mouse = false;
+    Vec2 middle_mouse_prev;
+    Vec2 middle_mouse_shift;
 
     vector<FGraph> graphs;
     map<int, map<int, linked_list_root<FGraphLink>>> field;
@@ -64,7 +76,7 @@ public:
 
     Field(float cell_size, Vec2 bounds = Vec2{500, 500});
 
-    int add_graph(const Graph& graph, Vec2 point = {200, 200}, float R = 100);
+    int add_graph(const Graph& graph, Vec2 point = DEF_GRAPH_LOC, float R = DEF_GRAPH_R);
     void remove_graph(int index);
 
     static Vec2 def_compute_force(Vec2 delta, float force_distance, ForceType type);

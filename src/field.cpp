@@ -10,20 +10,27 @@
 
 using namespace std;
 
+const Vec2 Field::DEF_GRAPH_LOC = {200, 200};
+const float Field::DEF_GRAPH_R = 100;
+
+
 Field::FGraph::Selection::Selection(bool is_selected, ImColor color):
     is_selected(is_selected), color(color) {}
 
 Field::FGraph::FGraph(const Graph& graph, Vec2 point, float R): 
     Graph(graph), points(connections.size()), speeds(connections.size()),
     points_sel(connections.size()), edges_sel(edges.size())
-{
+{ reset_points_pos(point, R); }
+Field::FGraphLink::FGraphLink(int graph_id, int index): graph_id(graph_id), index(index) {}
+
+void Field::FGraph::reset_points_pos(Vec2 point, float R) {
     const int n = connections.size();
     for(int i = 0; i < n; i++) {
         const float alpha = 2 * i * M_PI / n;
         points[i] = Vec2{ cos(alpha), sin(alpha) } * R + point;
+        speeds[i] = {0, 0};
     }
 }
-Field::FGraphLink::FGraphLink(int graph_id, int index): graph_id(graph_id), index(index) {}
 
 
 Field::Field(float cell_size, Vec2 bounds): cell_size(cell_size), bounds(bounds), graphs() {}
@@ -92,7 +99,7 @@ Vec2 Field::def_compute_force(Vec2 delta, float force_distance, ForceType type) 
 }
 
 void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, ForceType)){
-    if(stop_ticks) return;
+    if(!use_ticks) return;
 
     vector<vector<Vec2>> forces(graphs.size());
     for(int g = 0; g < graphs.size(); g++){
@@ -170,11 +177,11 @@ void Field::display_window(){
 
     const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 20, main_viewport->WorkPos.y + 20), ImGuiCond_Appearing);
-    ImGui::Begin("Field", nullptr, ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin("Field", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
     ImGui::SetWindowSize(bounds, ImGuiCond_Appearing);
     bounds = ImGui::GetWindowSize();
 
-    const Vec2 p = ImGui::GetCursorScreenPos();
+    const Vec2 const_p = ImGui::GetCursorScreenPos();
     const Vec2 cursor = ImGui::GetCursorPos();
     Vec2 available_space = ImGui::GetContentRegionAvail();
     if(abs(available_space.x) <= 1) available_space.x = 1;
@@ -185,11 +192,23 @@ void Field::display_window(){
     ImGui::SetItemAllowOverlap();
 
     const Vec2 mouse = ImGui::GetMousePos();
+
+    // Dragging feature
+    if(!ImGui::IsMouseDown(ImGuiMouseButton_Middle)){
+        if(was_middle_mouse) {
+            middle_mouse_shift += mouse - middle_mouse_prev;
+            was_middle_mouse = false;
+        }
+        middle_mouse_prev = mouse;
+    }
+    else if(!was_middle_mouse) was_middle_mouse = true;
+    const auto p = const_p + middle_mouse_shift + mouse - middle_mouse_prev;
+
     if (selected.graph_id == -1 && ImGui::IsItemClicked(ImGuiMouseButton_Left))
     {
-        auto field_index = get_field_index(mouse);
-        int shift_x = 2 * fmod(mouse.x, cell_size) >= cell_size;
-        int shift_y = 2 * fmod(mouse.y, cell_size) >= cell_size;
+        auto field_index = get_field_index(mouse - p);
+        int shift_x = 2 * fmod(mouse.x - p.x, cell_size) >= cell_size;
+        int shift_y = 2 * fmod(mouse.y - p.y, cell_size) >= cell_size;
         for(int dx = -1; dx <= 0 && selected.graph_id == -1; dx++)
         for(int dy = -1; dy <= 0 && selected.graph_id == -1; dy++){
             const auto& list = field[field_index.first + dx + shift_x][field_index.second + dy + shift_y];
@@ -212,11 +231,9 @@ void Field::display_window(){
 
     static bool debug_field = false;
     ImGui::SetCursorPos(cursor);
-    ImGui::Checkbox("Enable field debugging", &debug_field);
+    ImGui::Checkbox("FieldN", &debug_field);
     ImGui::SameLine();
-    ImGui::Checkbox("Stop ticks", &stop_ticks);
-    ImGui::SameLine();
-    ImGui::Checkbox("Show ids", &show_node_ids);
+    ImGui::Checkbox("Phys", &use_ticks);
     ImGui::SameLine();
     {
         string text = bounds.to_string();
@@ -224,8 +241,18 @@ void Field::display_window(){
     }
     ImGui::SameLine();
     ImGui::Checkbox("Bounds", &bound_forces);
+    ImGui::SameLine();
+    if(ImGui::Button("Reset pos")) {
+        for(FGraph& graph : graphs)
+            graph.reset_points_pos();
+    }
 
-    const ImU32 col = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
+    ImGui::Checkbox("node_i", &show_node_ids);
+    ImGui::SameLine();
+    ImGui::Checkbox("edge_w", &show_edge_weights);
+
+    const ImU32 node_color = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
+    const ImU32 edge_color = ImColor(.5f, .5f, .5f, 1.0f);
     const ImU32 green_col = ImColor(0.0f, 1.0f, 0.1f, 1.0f);
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
     for(int g = 0; g < graphs.size(); g++){
@@ -234,18 +261,20 @@ void Field::display_window(){
         // Drawing edges
         const int m = graph.edges.size();
         for (int i = 0; i < m; i++){
+            auto a = p + graph.points[graph.edges[i].first];
+            auto b = p + graph.points[graph.edges[i].second];
             if(graph.edges_sel[i].is_selected){
-                draw_list->AddLine(
-                    p + graph.points[graph.edges[i].first],
-                    p + graph.points[graph.edges[i].second],
+                draw_list->AddLine(a, b,
                     graph.edges_sel[i].color, 2.0f
                 );
             }
-            else {
-                draw_list->AddLine(
-                    p + graph.points[graph.edges[i].first],
-                    p + graph.points[graph.edges[i].second],
-                    col
+            else draw_list->AddLine(a, b, edge_color);
+
+            if(show_edge_weights) {
+                string num = to_string(graph.edges[i].weight);
+                draw_list->AddText(
+                    (a + b) / 2 - (Vec2) ImGui::CalcTextSize(num.c_str()) / 2,
+                    ImColor(0, 255, 255), num.c_str()
                 );
             }
         }
@@ -256,7 +285,7 @@ void Field::display_window(){
         {
             const Vec2& point = graph.points[i];
             // TODO: implement random coloring
-            draw_list->AddNgonFilled(p + point, R, col, 36);
+            draw_list->AddNgonFilled(p + point, R, node_color, 36);
             if(graph.points_sel[i].is_selected)
                 draw_list->AddCircle(p + point, R + 1, graph.points_sel[i].color, 36, 5.0f);
 
@@ -275,7 +304,7 @@ void Field::display_window(){
         if(i->first < 0 || i->first * cell_size > available_space.x) continue;
         for(auto j = i->second.begin(); j != i->second.end(); j++){
             if(j->first < 0 || j->first * cell_size > available_space.y) continue;
-            ImGui::SetCursorPos(cursor + Vec2{i->first * cell_size, j->first * cell_size});
+            ImGui::SetCursorPos(cursor + (p - const_p) + Vec2{i->first * cell_size, j->first * cell_size});
             {
                 string num = to_string(j->second.size);
                 ImGui::TextColored(ImVec4(0, 255, 0, 255), num.c_str());
