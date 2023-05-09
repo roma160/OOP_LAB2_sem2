@@ -14,6 +14,23 @@
 
 using namespace std;
 
+bool get_int(const string& str, int& ret) {
+    try
+    {
+        int buff = stoi(str);
+        ret = buff;
+    }
+    catch(std::invalid_argument const& ex)
+    {
+        return false;
+    }
+    catch(std::out_of_range const& ex)
+    {
+        return false;
+    }
+    return true;
+}
+
 void display_algorithms_window(Field& field) {
     ImGui::Begin("Algorithms window", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::SetWindowSize({300, 500}, ImGuiCond_Once);
@@ -43,25 +60,36 @@ void display_algorithms_window(Field& field) {
         field.disselect_all_points();
     }
 
+    static bool incorrect_input = false;
+
     // Algortithms ComboBox
-    static const vector<string> algorithms{ "1. BFS", "2. DFS", "3. Prim's min tree" };
+    static const vector<string> algorithms{
+        "1. BFS", "2. DFS", "3. Prim's min tree",
+        "4. Dijkstra's min path"
+    };
     static int item_current_idx = algorithms.size() - 1;
     if (ImGui::BeginCombo("Algorithm", algorithms[item_current_idx].c_str()))
     {
         for (int n = 0; n < algorithms.size(); n++)
         {
             const bool is_selected = (item_current_idx == n);
-            if (ImGui::Selectable(algorithms[n].c_str(), is_selected))
+            if (ImGui::Selectable(algorithms[n].c_str(), is_selected)){
                 item_current_idx = n;
+                incorrect_input = false;
+            }
             if (is_selected) ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
     }
 
     // Algortithm control
+    static string from_node_str = to_string(0);
+    static string to_node_str = to_string(field.get_graph(0)->connections.size() - 1);
+
     ImGui::Dummy({0, 10});
-    ImGui::Text(algorithms[item_current_idx].c_str());
+    if(incorrect_input) ImGui::TextColored(ImVec4(1, 0, 0, 1), "Incorrect input data!");
     if(ImGui::Button("Execute")) {
+        incorrect_input = false;
         if(item_current_idx == 0) {
             algos::bfs(field, 0, 0);
         }
@@ -80,6 +108,34 @@ void display_algorithms_window(Field& field) {
                 field.select_edge(graph.get_edge_id(edge.first, edge.second), 0);
             }
         }
+        else if(item_current_idx == 3) {
+            int from = -1, to = -1;
+            if(!get_int(from_node_str, from) || !get_int(to_node_str, to))
+                incorrect_input = true;
+            else {
+                Graph& graph = *field.get_graph(0);
+                auto res = algos::dijkstra_path(graph, from, to);
+
+                field.disselect_all_edges();
+                field.disselect_all_points();
+                field.select_point(from, 0, ImColor(1.0f, .0f, .0f, 1.0f));
+                field.select_point(to, 0, ImColor(.0f, 1.0f, .0f, 1.f));
+                for(int i = 1; i < res.size(); i++) {
+                    field.select_edge(graph.get_edge_id(res[i-1], res[i]), 0);
+                }
+            }
+        }
+    }
+    switch (item_current_idx)
+    {
+    case 3:
+        const float x = ImGui::GetContentRegionAvail().x / 2 - 10;
+        ImGui::SetNextItemWidth(x - ImGui::CalcTextSize("Start point").x);
+        ImGui::InputText("Start point", &from_node_str, ImGuiInputTextFlags_CharsDecimal);
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(x - ImGui::CalcTextSize("End point").x);
+        ImGui::InputText("End point", &to_node_str, ImGuiInputTextFlags_CharsDecimal);
+        break;
     }
 
     ImGui::End();

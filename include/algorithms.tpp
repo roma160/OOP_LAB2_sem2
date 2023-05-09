@@ -100,4 +100,41 @@ namespace algos {
 
         return ret;
     }
+
+    // Task 4
+    vector<int> dijkstra_path(Graph& graph, int from = 0, int to = -1) {
+        const int n = graph.connections.size();
+        if(n == 0) return vector<int>();
+        if(to == -1) to = n - 1;
+
+        struct segment {
+            vector<int> path;
+            int length;
+
+            segment(): path(), length(-1) {}
+            segment(vector<int> path, int length): path(path), length(length) {}
+        };
+        vector<segment> distances(n);
+        queue<int> q;
+        q.push(from);
+        distances[from] = {{from}, 0};
+        while(!q.empty()) {
+            int buff = q.front();
+            q.pop();
+            for(int i = 0; i < n; i++)
+                if(graph.connections[i][buff] && (
+                    distances[i].length == -1 || 
+                    distances[i].length > distances[buff].length + 
+                    graph.connections[i][buff].weight)
+                ) {
+                    distances[i].length = distances[buff].length + 
+                        graph.connections[i][buff].weight;
+                    distances[i].path = distances[buff].path;
+                    distances[i].path.push_back(i);
+                    q.push(i);
+                }
+        }
+
+        return distances[to].path;
+    }
 }
