@@ -96,7 +96,7 @@ int main(int, char **)
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    Graph graph(vector<vector<bool>>(6, vector<bool>(6, true)));
+    Graph graph(vector<vector<Graph::Connection>>(6, vector<Graph::Connection>(6, true)));
 
     Field field(200);
     field.add_graph(graph);
