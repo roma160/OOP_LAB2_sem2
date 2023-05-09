@@ -5,6 +5,7 @@
 #include <queue>
 #include <stack>
 #include <vector>
+#include <algorithm>
 
 namespace algos {
     // TASK 1
@@ -68,33 +69,33 @@ namespace algos {
     }
 
     // Task 3
+    bool _pairs_descending(pair<int, int> a, pair<int, int> b)
+    { return a.first > b.first; }
     Graph prims_min_tree(Graph& graph, int start_point = 0) {
         const int n = graph.connections.size();
         if(n == 0) return Graph();
 
         Graph ret(n);
         vector<bool> visited(n);
-        queue<int> q;
-        q.push(start_point);
-        visited[start_point] = true;
+        stack<pair<int, int>> q;
+        q.push({-1, start_point});
         while (!q.empty())
         {
-            int buff = q.front();
+            auto buff = q.top();
             q.pop();
+            int from = buff.first;
+            int to = buff.second;
+            if(visited[to]) continue;
+            visited[to] = true;
+            if(from != -1) ret.add_edge(from, to);
 
-            int min_w = -1, min_i = -1;
+            vector<pair<int, int>> possible;
             for(int i = 0; i < n; i++)
-                if(graph.connections[buff][i] && !visited[i] && 
-                    (min_w == -1 || min_w > graph.connections[buff][i].weight)){
-                    min_w = graph.connections[buff][i].weight;
-                    min_i = i;
+                if(graph.connections[to][i] && !visited[i]){
+                    possible.push_back({graph.connections[to][i].weight, i});
                 }
-            
-            if(min_i == -1) continue;
-            q.push(min_i);
-            visited[min_i] = true;
-
-            ret.add_edge(buff, min_i);
+            sort(possible.begin(), possible.end(), _pairs_descending);
+            for(auto p : possible) q.push({to, p.second});
         }
 
         return ret;
