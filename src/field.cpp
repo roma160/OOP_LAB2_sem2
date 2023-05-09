@@ -339,6 +339,7 @@ void Field::toggle_point_select(int point_id, int graph_id, ImColor color) {
 }
 
 void Field::select_edge(int edge_id, int graph_id, ImColor color) {
+    if(edge_id == -1) return;
     auto& selection = graphs[graph_id].edges_sel[edge_id];
     if(selection.color != color) selection.color = color;
     selection.is_selected = true;

@@ -44,8 +44,8 @@ void display_algorithms_window(Field& field) {
     }
 
     // Algortithms ComboBox
-    static const vector<string> algorithms{ "1. BFS" };
-    static int item_current_idx = 0;
+    static const vector<string> algorithms{ "1. BFS", "2. DFS" };
+    static int item_current_idx = 1;
     if (ImGui::BeginCombo("Algorithm", algorithms[item_current_idx].c_str()))
     {
         for (int n = 0; n < algorithms.size(); n++)
@@ -64,6 +64,9 @@ void display_algorithms_window(Field& field) {
     if(ImGui::Button("Execute")) {
         if(item_current_idx == 0) {
             algos::bfs(field, 0, 0);
+        }
+        else if(item_current_idx == 1) {
+            algos::dfs(field, 0, 0);
         }
     }
 
