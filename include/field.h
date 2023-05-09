@@ -95,4 +95,5 @@ public:
     void disselect_all_edges(int graph_id = 0);
 
     const vector<FGraph>& get_graphs() const;
+    FGraph* get_graph(int graph_index);
 };

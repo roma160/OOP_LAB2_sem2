@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
+#include "algorithms.tpp"
 
 #include <vector>
 #include <string>
@@ -36,7 +37,35 @@ void display_algorithms_window(Field& field) {
         ImGui::TreePop();
     }
 
-    ImGui::Text("Algorithms:");
+    ImGui::Dummy({0, 10});
+    if(ImGui::Button("Reset selection")) {
+        field.disselect_all_edges();
+        field.disselect_all_points();
+    }
+
+    // Algortithms ComboBox
+    static const vector<string> algorithms{ "1. BFS" };
+    static int item_current_idx = 0;
+    if (ImGui::BeginCombo("Algorithm", algorithms[item_current_idx].c_str()))
+    {
+        for (int n = 0; n < algorithms.size(); n++)
+        {
+            const bool is_selected = (item_current_idx == n);
+            if (ImGui::Selectable(algorithms[n].c_str(), is_selected))
+                item_current_idx = n;
+            if (is_selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    // Algortithm control
+    ImGui::Dummy({0, 10});
+    ImGui::Text(algorithms[item_current_idx].c_str());
+    if(ImGui::Button("Execute")) {
+        if(item_current_idx == 0) {
+            algos::bfs(field, 0, 0);
+        }
+    }
 
     ImGui::End();
 }

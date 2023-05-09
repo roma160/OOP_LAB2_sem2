@@ -265,7 +265,7 @@ void Field::display_window(){
             auto b = p + graph.points[graph.edges[i].second];
             if(graph.edges_sel[i].is_selected){
                 draw_list->AddLine(a, b,
-                    graph.edges_sel[i].color, 2.0f
+                    graph.edges_sel[i].color, 3.0f
                 );
             }
             else draw_list->AddLine(a, b, edge_color);
@@ -361,3 +361,4 @@ void Field::toggle_edge_select(int edge_id, int graph_id, ImColor color) {
 }
 
 const vector<Field::FGraph>& Field::get_graphs() const { return graphs; }
+Field::FGraph* Field::get_graph(int graph_index) { return &graphs[graph_index]; }

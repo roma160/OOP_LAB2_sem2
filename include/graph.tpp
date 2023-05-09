@@ -30,6 +30,13 @@ struct Graph
         Edge(): first(-1), second(-1), Connection() {}
         Edge(int first, int second): first(first), second(second), Connection(1) {}
         Edge(int first, int second, T weight): first(first), second(second), Connection(weight) {}
+
+        // Set insertion fix
+        bool operator<(const Edge& b) const {
+            if (first != b.first) return first < b.first;
+            if (second != b.second) return second < b.second;
+            return weight < b.weight;
+        }
     };
     
 
@@ -48,6 +55,15 @@ struct Graph
             connections[edge.first][edge.second] = true;
             connections[edge.second][edge.first] = true;
         }
+    }
+
+    int get_edge_id(int from, int to) {
+        if(from > to) swap(from, to);
+        const int m = edges.size();
+        for(int i = 0; i < m; i++)
+            if(edges[i].first == from && edges[i].second == to)
+                return i;
+        return -1;
     }
 
     string to_string() const {
