@@ -56,3 +56,25 @@ struct Graph
         return true;
     }
 };
+
+// template <typename T>
+// class EdgesList {
+// private:
+//     map<pair<int, int>, T> list;
+
+//     pair<int, int> format_from_to(int from, int to) {
+//         if (from > to) swap(from, to);
+//         return {from, to};
+//     }
+
+// public:
+//     EdgesList(): list() {}
+
+//     T& get(int from, int to) {
+//         return list[format_from_to(from, to)];
+//     }
+
+//     bool contains(int from, int to) {
+//         return list.count(format_from_to(from, to)) > 0;
+//     }
+// };

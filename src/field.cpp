@@ -23,7 +23,7 @@ Field::FGraph::FGraph(const Graph& graph, Vec2 point, float R):
         points[i] = Vec2{ cos(alpha), sin(alpha) } * R + point;
     }
 }
-Field::FGraphLink::FGraphLink(int graph_id, int node_id): graph_id(graph_id), node_id(node_id) {}
+Field::FGraphLink::FGraphLink(int graph_id, int index): graph_id(graph_id), index(index) {}
 
 
 Field::Field(float cell_size, Vec2 bounds): cell_size(cell_size), bounds(bounds), graphs() {}
@@ -63,7 +63,7 @@ void Field::remove_graph(int index) {
 }
 
 inline bool operator==(const Field::FGraphLink& a, const Field::FGraphLink& b)
-{ return a.graph_id == b.graph_id && a.node_id == b.node_id; }
+{ return a.graph_id == b.graph_id && a.index == b.index; }
 inline bool operator!=(const Field::FGraphLink& a, const Field::FGraphLink& b)
 { return !(a == b); }
 
@@ -98,14 +98,14 @@ void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, ForceType)){
     for(int g = 0; g < graphs.size(); g++){
         const int n = graphs[g].connections.size();
         forces[g] = vector<Vec2>(n);
-        for(FGraphLink i = {0, g}; i.node_id < n; i.node_id++){
-            Vec2 &point = graphs[g].points[i.node_id];
+        for(FGraphLink i = {0, g}; i.index < n; i.index++){
+            Vec2 &point = graphs[g].points[i.index];
 
             // Looking over connected verticies
             for(int j = 0; j < n; j++){
-                if(i.node_id == j || !graphs[g].connections[i.node_id][j]) continue;
+                if(i.index == j || !graphs[g].connections[i.index][j]) continue;
                 Vec2 &point_b = graphs[g].points[j];
-                forces[i.graph_id][i.node_id] += force_function(
+                forces[i.graph_id][i.index] += force_function(
                     point_b - point, cell_size, ConnectedNode);
             }
 
@@ -117,16 +117,16 @@ void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, ForceType)){
                 if(list.size == 0) continue;
                 auto buff = list.first;
                 for(; buff != nullptr; buff = buff->next){
-                    if (buff->val == i || graphs[g].connections[i.node_id][buff->val.node_id]) continue;
-                    const Vec2 &point_b = graphs[buff->val.graph_id].points[buff->val.node_id];
-                    forces[i.graph_id][i.node_id] += force_function(
+                    if (buff->val == i || graphs[g].connections[i.index][buff->val.index]) continue;
+                    const Vec2 &point_b = graphs[buff->val.graph_id].points[buff->val.index];
+                    forces[i.graph_id][i.index] += force_function(
                         point_b - point, cell_size, Node);
                 }
             }
 
             // Looking over walls
             if(bound_forces){
-                forces[i.graph_id][i.node_id] +=
+                forces[i.graph_id][i.index] +=
                     force_function({point.x, 0}, cell_size, LeftBound) + 
                     force_function({point.x - bounds.x, 0}, cell_size, RightBound) + 
                     force_function({0, point.y}, cell_size, UpBound) +
@@ -137,12 +137,12 @@ void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, ForceType)){
 
     for(int g = 0; g < graphs.size(); g++){
         const int n = graphs[g].connections.size();
-        for(FGraphLink i = {0, g}; i.node_id < n; i.node_id++){
-            Vec2 &point = graphs[g].points[i.node_id];
-            Vec2 &speed = graphs[g].speeds[i.node_id];
+        for(FGraphLink i = {0, g}; i.index < n; i.index++){
+            Vec2 &point = graphs[g].points[i.index];
+            Vec2 &speed = graphs[g].speeds[i.index];
             const auto field_index = get_field_index(point);
             
-            speed += forces[i.graph_id][i.node_id] * dt;
+            speed += forces[i.graph_id][i.index] * dt;
             speed *= 0.95;
             const static float max_speed = 1e3;
             const float abs_speed = speed.abs();
@@ -157,7 +157,7 @@ void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, ForceType)){
 }
 
 void Field::recalculate_cell_for_point(const pair<int, int>& old_field_index, FGraphLink point_index) {
-    const auto new_field_index = get_field_index(graphs[point_index.graph_id].points[point_index.node_id]);
+    const auto new_field_index = get_field_index(graphs[point_index.graph_id].points[point_index.index]);
     if(old_field_index != new_field_index){
         remove_from_field(old_field_index, point_index);
         add_to_field(new_field_index, point_index);
@@ -196,13 +196,13 @@ void Field::display_window(){
             if(list.size == 0) continue;
             auto buff = list.first;
             for(; buff != nullptr && selected.graph_id == -1; buff = buff->next){
-                const Vec2 &point = graphs[buff->val.graph_id].points[buff->val.node_id];
+                const Vec2 &point = graphs[buff->val.graph_id].points[buff->val.index];
                 if ((point + p - mouse).abs() <= R) selected = buff->val;
             }
         }
     }
     if (selected.graph_id != -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left)){
-        Vec2& point = graphs[selected.graph_id].points[selected.node_id];
+        Vec2& point = graphs[selected.graph_id].points[selected.index];
         const auto old_field_index = get_field_index(point);
         point = mouse - p;
         recalculate_cell_for_point(old_field_index, selected);
@@ -234,11 +234,20 @@ void Field::display_window(){
         // Drawing edges
         const int m = graph.edges.size();
         for (int i = 0; i < m; i++){
-            draw_list->AddLine(
-                p + graph.points[graph.edges[i].first],
-                p + graph.points[graph.edges[i].second],
-                col
-            );
+            if(graph.edges_sel[i].is_selected){
+                draw_list->AddLine(
+                    p + graph.points[graph.edges[i].first],
+                    p + graph.points[graph.edges[i].second],
+                    graph.edges_sel[i].color, 2.0f
+                );
+            }
+            else {
+                draw_list->AddLine(
+                    p + graph.points[graph.edges[i].first],
+                    p + graph.points[graph.edges[i].second],
+                    col
+                );
+            }
         }
 
         // Drawing nodes
@@ -287,8 +296,34 @@ void Field::disselect_point(int point_id, int graph_id) {
     auto& selection = graphs[graph_id].points_sel[point_id];
     selection.is_selected = false;
 }
+void Field::disselect_all_points(int graph_id) {
+    for(int i = 0; i < graphs[graph_id].connections.size(); i++)
+        disselect_point(i, graph_id);
+}
 void Field::toggle_point_select(int point_id, int graph_id, ImColor color) {
     auto& selection = graphs[graph_id].points_sel[point_id];
+    if(selection.is_selected) selection.is_selected = false;
+    else {
+        if(selection.color != color) selection.color = color;
+        selection.is_selected = true;
+    }
+}
+
+void Field::select_edge(int edge_id, int graph_id, ImColor color) {
+    auto& selection = graphs[graph_id].edges_sel[edge_id];
+    if(selection.color != color) selection.color = color;
+    selection.is_selected = true;
+}
+void Field::disselect_edge(int edge_id, int graph_id) {
+    auto& selection = graphs[graph_id].edges_sel[edge_id];
+    selection.is_selected = false;
+}
+void Field::disselect_all_edges(int graph_id) {
+    for(int m = 0; m < graphs[graph_id].edges.size(); m++)
+        disselect_edge(m, graph_id);
+}
+void Field::toggle_edge_select(int edge_id, int graph_id, ImColor color) {
+    auto& selection = graphs[graph_id].edges_sel[edge_id];
     if(selection.is_selected) selection.is_selected = false;
     else {
         if(selection.color != color) selection.color = color;

@@ -6,8 +6,11 @@
 
 #include <vector>
 #include <string>
+#include <iostream>
 
 #include "vec2.h"
+
+using namespace std;
 
 void display_control_window(Field& field) {
     ImGui::Begin("Control window", nullptr, ImGuiWindowFlags_NoCollapse);
@@ -47,7 +50,7 @@ void display_control_window(Field& field) {
                 ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
 
             typedef Field::FGraphLink l;
-            static l hovered(-1, 0);
+            static l h_node(-1, 0), h_edge(-1, 0);
 
             if(ImGui::TreeNodeEx((void*) (intptr_t) g, tree_node_flags, "%d Graph[%d]", g, n)) {
                 ImGui::TableNextRow();
@@ -61,13 +64,13 @@ void display_control_window(Field& field) {
                         tree_node_flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen,
                         "%d Node", i
                     );
-                    if(ImGui::IsItemHovered() && hovered.graph_id == -1){
-                        hovered = l{g, i};
+                    if(ImGui::IsItemHovered() && h_node.graph_id == -1){
+                        h_node = l{g, i};
                         field.select_point(i, g);
                     }
-                    else if(!ImGui::IsItemHovered() && hovered == l{g, i}) {
+                    else if(!ImGui::IsItemHovered() && h_node == l{g, i}) {
                         field.disselect_point(i, g);
-                        hovered.graph_id = -1;
+                        h_node.graph_id = -1;
                     }
                 }
 
@@ -77,6 +80,7 @@ void display_control_window(Field& field) {
                 for(int i = 0; i < m; i++){
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
+                    bool is_hovered = false;
 
                     const float input_size = (ImGui::GetColumnWidth() - ImGui::CalcTextSize(" - ").x) / 2;
                     static const auto add_input_text = [](int j, int g, const float input_size){
@@ -87,12 +91,24 @@ void display_control_window(Field& field) {
                         ImGui::PopID();
                     };
                     add_input_text(2*i, g, input_size);
+                    is_hovered |= ImGui::IsItemHovered();
 
                     ImGui::SameLine();
                     ImGui::Text(" - ");
+                    is_hovered |= ImGui::IsItemHovered();
                     
                     ImGui::SameLine();
                     add_input_text(2*i + 1, g, input_size);
+                    is_hovered |= ImGui::IsItemHovered();
+
+                    if(is_hovered && h_edge.graph_id == -1){
+                        h_edge = l{g, i};
+                        field.select_edge(i, g);
+                    }
+                    else if(!is_hovered && h_edge == l{g, i}) {
+                        field.disselect_edge(i, g);
+                        h_edge.graph_id = -1;
+                    }
                 }
 
                 ImGui::TreePop();

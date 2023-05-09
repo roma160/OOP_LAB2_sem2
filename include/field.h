@@ -35,14 +35,14 @@ public:
     struct FGraphLink
     {
         int graph_id;
-        int node_id;
-        FGraphLink(int graph_id, int node_id);
+        int index;
+        FGraphLink(int graph_id, int index);
     };
-
-    enum ForceType { Node, ConnectedNode, UpBound, DownBound, LeftBound, RightBound };
 
     friend bool operator==(const Field::FGraphLink& a, const Field::FGraphLink& b);
     friend bool operator!=(const Field::FGraphLink& a, const Field::FGraphLink& b);
+
+    enum ForceType { Node, ConnectedNode, UpBound, DownBound, LeftBound, RightBound };
 
 private:
     bool stop_ticks = false;
@@ -75,6 +75,12 @@ public:
     void toggle_point_select(int point_id, int graph_id = 0, ImColor color = ImColor(1.0f, 0.0f, 0.0f, 1.0f));
     void select_point(int point_id, int graph_id = 0, ImColor color = ImColor(1.0f, 0.0f, 0.0f, 1.0f));
     void disselect_point(int point_id, int graph_id = 0);
+    void disselect_all_points(int graph_id = 0);
+
+    void toggle_edge_select(int edge_id, int graph_id = 0, ImColor color = ImColor(1.0f, 0.0f, 0.0f, 1.0f));
+    void select_edge(int edge_id, int graph_id = 0, ImColor color = ImColor(1.0f, 0.0f, 0.0f, 1.0f));
+    void disselect_edge(int edge_id, int graph_id = 0);
+    void disselect_all_edges(int graph_id = 0);
 
     const vector<FGraph>& get_graphs() const;
 };
