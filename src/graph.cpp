@@ -1,6 +1,11 @@
 #include "graph.h"
 
+#include <iostream>
+
 using namespace std;
+
+int min(int a, int b) { return a > b ? b : a; }
+int max(int a, int b) { return a > b ? a : b; }
 
 Graph::Connection::Connection(): weight(0), connected(false) {}
 Graph::Connection::Connection(bool connected): weight(connected), connected(connected) {}
@@ -10,8 +15,8 @@ Graph::Connection::operator bool() const { return connected; }
 
 
 Graph::Edge::Edge(): first(-1), second(-1), Connection() {}
-Graph::Edge::Edge(int first, int second): first(first), second(second), Connection(1) {}
-Graph::Edge::Edge(int first, int second, T weight): first(first), second(second), Connection(weight) {}
+Graph::Edge::Edge(int first, int second): Edge(first, second, 1) {}
+Graph::Edge::Edge(int first, int second, T weight): first(min(first, second)), second(max(first, second)), Connection(weight) {}
 
 // Set insertion fix
 bool Graph::Edge::operator<(const Edge& b) const {
@@ -95,8 +100,6 @@ bool Graph::from_string(const string& s, Graph& graph) {
         else weight = stoi(match[3]);
         Edge to_push = {stoi(match[1]), stoi(match[2]), weight};
         
-        if (to_push.first > to_push.second)
-            swap(to_push.first, to_push.second);
         edges.insert(to_push);
         if (n < to_push.first) n = to_push.first;
         if (n < to_push.second) n = to_push.second;
@@ -167,8 +170,6 @@ bool SparseGraph::from_string(const string& s, SparseGraph& graph) {
         else weight = stoi(match[3]);
         Edge to_push = {stoi(match[1]), stoi(match[2]), weight};
         
-        if (to_push.first > to_push.second)
-            swap(to_push.first, to_push.second);
         edges.insert(to_push);
         if (n < to_push.first) n = to_push.first;
         if (n < to_push.second) n = to_push.second;
