@@ -35,16 +35,32 @@ void display_algorithms_window(Field& field) {
     ImGui::Begin("Algorithms window", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::SetWindowSize({300, 500}, ImGuiCond_Once);
 
+    static string graph_data = field.get_graphs()[0].to_string();
     if (ImGui::TreeNode("Change graph"))
     {
-        static string graph_data = field.get_graphs()[0].to_string();
         if (ImGui::Button("Load")) {
             Graph buff;
             if(Graph::from_string(graph_data, buff)){
-                field.remove_graph(0);
-                field.add_graph(buff);
+                Graph& cur_graph = *field.get_graph(0);
+                if(cur_graph.includes(buff) || (buff.includes(cur_graph) && 
+                    buff.connections.size() <= cur_graph.connections.size())
+                ) {
+                    for(int i = cur_graph.edges.size() - 1; i >= 0; i--)
+                        cur_graph.remove_edge(i);
+                    for(int i = 0; i < buff.edges.size(); i++)
+                        cur_graph.add_edge(
+                            buff.edges[i].first,
+                            buff.edges[i].second,
+                            buff.edges[i].weight
+                        );
+                }
+                else {
+                    field.remove_graph(0);
+                    field.add_graph(buff);
+                }
             }
         }
+
         ImGui::InputTextMultiline(
             "##graph_data", &graph_data,
             ImVec2(-1, ImGui::GetTextLineHeight() * 16),

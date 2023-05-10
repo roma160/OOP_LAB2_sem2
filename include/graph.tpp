@@ -58,20 +58,36 @@ struct Graph
         }
     }
 
-    void add_edge(int from, int to, int weight = 1) {
+    virtual void add_edge(int from, int to, int weight = 1) {
         if(from > to) swap(from, to);
         edges.push_back(Edge(from, to, weight));
         connections[from][to] = weight;
         connections[to][from] = weight;
     }
 
-    int get_edge_id(int from, int to) {
+    virtual void remove_edge(int edge_id) {
+        int from = edges[edge_id].first;
+        int to = edges[edge_id].second;
+        connections[from][to].connected = false;
+        connections[to][from].connected = false;
+        edges.erase(edges.begin() + edge_id);
+    }
+
+    int get_edge_id(int from, int to) const {
         if(from > to) swap(from, to);
         const int m = edges.size();
         for(int i = 0; i < m; i++)
             if(edges[i].first == from && edges[i].second == to)
                 return i;
         return -1;
+    }
+
+    bool includes(const Graph& graph) const {
+        if(graph.connections.size() > connections.size()) return false;
+        set<Edge> mine(edges.begin(), edges.end());
+        for(auto edge : graph.edges)
+            if(!mine.count(edge)) return false;
+        return true;
     }
 
     string to_string() const {

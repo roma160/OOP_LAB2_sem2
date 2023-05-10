@@ -36,6 +36,9 @@ public:
         FGraph(const Graph& graph, Vec2 point = DEF_GRAPH_LOC, float R = DEF_GRAPH_R);
 
         void reset_points_pos(Vec2 point = DEF_GRAPH_LOC, float R = DEF_GRAPH_R);
+
+        void add_edge(int from, int to, int weight = 1) override;
+        void remove_edge(int edge_id) override;
     };
 
     struct FGraphLink

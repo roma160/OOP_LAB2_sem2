@@ -32,6 +32,17 @@ void Field::FGraph::reset_points_pos(Vec2 point, float R) {
     }
 }
 
+void Field::FGraph::add_edge(int from, int to, int weight){
+    if(from > to) swap(from, to);
+    Graph::add_edge(from, to, weight);
+    edges_sel.push_back(Selection());
+}
+
+void Field::FGraph::remove_edge(int edge_id){
+    Graph::remove_edge(edge_id);
+    edges_sel.erase(edges_sel.begin() + edge_id);
+}
+
 
 Field::Field(float cell_size, Vec2 bounds): cell_size(cell_size), bounds(bounds), graphs() {}
 
