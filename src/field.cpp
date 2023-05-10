@@ -45,6 +45,11 @@ void Field::FGraph::remove_edge(int edge_id){
     edges_anno.erase(edges_anno.begin() + edge_id);
 }
 
+void Field::FGraph::clear_annotations() {
+    for(int i = 0; i < edges.size(); i++)
+        edges_anno[i].clear();
+}
+
 
 Field::Field(float cell_size, Vec2 bounds): cell_size(cell_size), bounds(bounds), graphs() {}
 

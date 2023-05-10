@@ -40,6 +40,8 @@ public:
 
         void add_edge(int from, int to, int weight = 1) override;
         void remove_edge(int edge_id) override;
+
+        void clear_annotations();
     };
 
     struct FGraphLink

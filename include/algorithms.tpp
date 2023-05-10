@@ -187,4 +187,65 @@ namespace algos {
         }
         return ret;
     }
+
+    // Task 6
+    bool _ff_bfs(Graph& graph, int from, int to, vector<int>& comeFrom) {
+        const int n = graph.connections.size();
+        vector<bool> visited(n);
+        visited[from] = true;
+        queue<int> q;
+        q.push(from);
+        while(!q.empty()) {
+            int buff = q.front();
+            q.pop();
+            for(int i = 0; i < n; i++)
+                if(graph.connections[buff][i].connected && 
+                    graph.connections[buff][i].weight > 0 &&
+                    !visited[i]
+                ){
+                    q.push(i);
+                    visited[i] = true;
+                    comeFrom[i] = buff;
+                }
+        }
+        return visited[to];
+    }
+    struct FFMaxFlowRes {
+        int maxFlow;
+        Graph flowData;
+
+        FFMaxFlowRes(Graph flowData): maxFlow(-1), flowData(move(flowData)) {}
+    };
+    FFMaxFlowRes ff_max_flow(Field& field, int graph_id = 0, int from = 0, int to = -1) {
+        FFMaxFlowRes res(*field.get_graph(graph_id));
+        Graph& graph = res.flowData;
+        const int n = graph.connections.size();
+        if(n == 0) return res;
+        if(to == -1) to = n - 1;
+
+        vector<int> comeFrom(n);
+        res.maxFlow = 0;
+
+        while(_ff_bfs(graph, from, to, comeFrom)) {
+            int pathFlow = -1;
+            int i = to;
+            while(i != from) {
+                if(pathFlow == -1 || pathFlow > graph.connections[comeFrom[i]][i].weight)
+                    pathFlow = graph.connections[comeFrom[i]][i].weight;
+                i = comeFrom[i];
+            }
+
+            res.maxFlow += pathFlow;
+
+            i = to;
+            while(i != from) {
+                int buff = comeFrom[i];
+                graph.connections[buff][i].weight -= pathFlow;
+                graph.connections[i][buff].weight += pathFlow;
+                i = buff;
+            }
+        }
+
+        return res;
+    }
 }

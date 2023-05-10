@@ -34,8 +34,8 @@ struct Graph
         // Set insertion fix
         bool operator<(const Edge& b) const {
             if (first != b.first) return first < b.first;
-            if (second != b.second) return second < b.second;
-            return weight < b.weight;
+            /*if (second != b.second)*/ return second < b.second;
+            //return weight < b.weight;
         }
     };
     

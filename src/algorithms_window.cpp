@@ -74,6 +74,7 @@ void display_algorithms_window(Field& field) {
     if(ImGui::Button("Reset selection")) {
         field.disselect_all_edges();
         field.disselect_all_points();
+        field.get_graph(0)->clear_annotations();
     }
 
     static bool incorrect_input = false;
@@ -82,7 +83,8 @@ void display_algorithms_window(Field& field) {
     // Algortithms ComboBox
     static const vector<string> algorithms{
         "1. BFS", "2. DFS", "3. Prim's min tree",
-        "4. Dijkstra's min path", "5. A* min path"
+        "4. Dijkstra's min path", "5. A* min path",
+        "6. FordFulkerson max flow"
     };
     static int item_current_idx = algorithms.size() - 1;
     if (ImGui::BeginCombo("Algorithm", algorithms[item_current_idx].c_str()))
@@ -119,6 +121,10 @@ void display_algorithms_window(Field& field) {
     if(incorrect_input) ImGui::TextColored(ImVec4(1, 0, 0, 1), "Incorrect input data!");
     if(ImGui::Button("Execute")) {
         incorrect_input = false;
+        field.disselect_all_edges();
+        field.disselect_all_points();
+        field.get_graph(0)->clear_annotations();
+
         if(item_current_idx == 0) {
             algos::bfs(field, 0, 0);
         }
@@ -130,8 +136,6 @@ void display_algorithms_window(Field& field) {
             Graph& graph = *field.get_graph(0);
             auto res = algos::prims_min_tree(graph, start_point);
 
-            field.disselect_all_edges();
-            field.disselect_all_points();
             field.select_point(start_point, 0);
             for(auto edge : res.edges) {
                 field.select_edge(graph.get_edge_id(edge.first, edge.second), 0);
@@ -145,8 +149,6 @@ void display_algorithms_window(Field& field) {
                 Graph& graph = *field.get_graph(0);
                 auto res = algos::dijkstra_path(graph, from, to);
 
-                field.disselect_all_edges();
-                field.disselect_all_points();
                 field.select_point(from, 0, ImColor(1.0f, .0f, .0f, 1.0f));
                 field.select_point(to, 0, ImColor(.0f, 1.0f, .0f, 1.f));
                 for(int i = 1; i < res.size(); i++) {
@@ -164,12 +166,35 @@ void display_algorithms_window(Field& field) {
                 auto res = algos::astar_path(field, 0, from, to, &log_stream);
                 log = log_stream.str();
 
-                field.disselect_all_edges();
-                field.disselect_all_points();
                 field.select_point(from, 0, ImColor(1.0f, .0f, .0f, 1.0f));
                 field.select_point(to, 0, ImColor(.0f, 1.0f, .0f, 1.f));
                 for(int i = 1; i < res.size(); i++) {
                     field.select_edge(graph.get_edge_id(res[i-1], res[i]), 0);
+                }
+            }
+        }
+        else if(item_current_idx == 5) {
+            int from = -1, to = -1;
+            if(!get_int(from_node_str, from) || !get_int(to_node_str, to))
+                incorrect_input = true;
+            else {
+                auto& graph = *field.get_graph(0);
+                auto res = algos::ff_max_flow(field, 0, from, to);
+                stringstream log_stream;
+                log_stream << "The maximum flow: " << res.maxFlow;
+                log = log_stream.str();
+
+                field.select_point(from, 0, ImColor(1.0f, .0f, .0f, 1.0f));
+                field.select_point(to, 0, ImColor(.0f, 1.0f, .0f, 1.f));
+                const int n = graph.connections.size();
+                for(int i = 0; i < n; i++)
+                for(int j = 0; j < n; j++){
+                    if(i >= j || !res.flowData.connections[i][j].connected)
+                        continue;
+                    stringstream builder;
+                    builder << res.flowData.connections[i][j].weight << "/" <<
+                        res.flowData.connections[j][i].weight;
+                    graph.edges_anno[graph.get_edge_id(i, j)] = builder.str();
                 }
             }
         }
@@ -178,6 +203,7 @@ void display_algorithms_window(Field& field) {
     {
     case 3:
     case 4:
+    case 5:
         const float x = ImGui::GetContentRegionAvail().x / 2 - 10;
         ImGui::SetNextItemWidth(x - ImGui::CalcTextSize("Start point").x);
         ImGui::InputText("Start point", &from_node_str, ImGuiInputTextFlags_CharsDecimal);
