@@ -47,9 +47,9 @@ void display_algorithms_window(Field& field, SparseGraph& sparse_graph) {
 
     static string graph_data = field.get_graph(0)->to_string();
     static string graph_description = field.get_graph(0)->to_info_string();
+    ImGui::Text("Currect graph: %s", graph_description.c_str());
     if (ImGui::TreeNode("Change graph"))
     {
-        ImGui::Text("Currect graph: %s", graph_description.c_str());
         if (ImGui::Button("Load")) {
             Graph buff;
             if(Graph::from_string(graph_data, buff)){
@@ -106,7 +106,8 @@ void display_algorithms_window(Field& field, SparseGraph& sparse_graph) {
     static const vector<string> algorithms{
         "1. BFS", "2. DFS", "3. Prim's min tree",
         "4. Dijkstra's min path", "5. A* min path",
-        "6. FordFulkerson max flow"
+        "6. FordFulkerson max flow",
+        "7. Bidirect Dijkstra's min path"
     };
     static int item_current_idx = algorithms.size() - 1;
     if (ImGui::BeginCombo("Algorithm", algorithms[item_current_idx].c_str()))
@@ -215,10 +216,26 @@ void display_algorithms_window(Field& field, SparseGraph& sparse_graph) {
                     if(i >= j || !res.flowData.connections[i][j].connected)
                         continue;
                     stringstream builder;
-                    builder << res.flowData.connections[i][j].weight << "/" <<
-                        res.flowData.connections[j][i].weight;
+                    builder << graph.connections[i][j].weight << "/" <<
+                        min(res.flowData.connections[j][i].weight, res.flowData.connections[i][j].weight);
                     graph.edges_anno[graph.get_edge_id(i, j)] = builder.str();
                 }
+            }
+        }
+        else if(item_current_idx == 6) {
+            int from = -1, to = -1;
+            if(!get_int(from_node_str, from) || !get_int(to_node_str, to))
+                incorrect_input = true;
+            else {
+                stringstream ss;
+                auto res = algos::bidirect_dijkstra_path(sparse_graph, from, to, &ss);
+                ss << "\n";
+                for(int i = 0; i < res.size(); i++){
+                    ss << res[i];
+                    if(i < res.size() - 1)
+                        ss << " - ";
+                }
+                log = ss.str();
             }
         }
     }
@@ -227,6 +244,7 @@ void display_algorithms_window(Field& field, SparseGraph& sparse_graph) {
     case 3:
     case 4:
     case 5:
+    case 6:
         const float x = ImGui::GetContentRegionAvail().x / 2 - 10;
         ImGui::SetNextItemWidth(x - ImGui::CalcTextSize("Start point").x);
         ImGui::InputText("Start point", &from_node_str, ImGuiInputTextFlags_CharsDecimal);

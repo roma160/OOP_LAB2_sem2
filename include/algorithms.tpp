@@ -248,4 +248,93 @@ namespace algos {
 
         return res;
     }
+
+    // Task 7
+    int _dijkstra_step(SparseGraph& graph, vector<int>& distances, vector<int>& cameFrom, priority_queue<int>* q, ostream* log) {
+        int buff = q->top();
+        q->pop();
+        for(int i = 0; i < graph.n; i++) {
+            if(!graph.is_connected(buff, i)) continue;
+            const auto& edge = graph.get_edge(buff, i);
+            if(distances[i] == -1 || 
+                distances[i] > distances[buff] + edge.weight
+            ) {
+                distances[i] = distances[buff] + edge.weight;
+                if(log != nullptr)
+                    *log<<"Node: "<<i<<" (d="<<distances[i]<<")\n";
+                cameFrom[i] = buff;
+                q->push(i);
+            }
+        }
+        return buff;
+    }
+    vector<int> bidirect_dijkstra_path(SparseGraph& graph, int from = 0, int to = -1, ostream* log = nullptr) {
+        const int n = graph.n;
+        if(n == 0) return vector<int>();
+        if(to == -1) to = n - 1;
+        
+        vector<int> distances_from(n, -1), distances_to(n, -1),
+            parent_from(n, -1), parent_to(n, -1);
+        auto cmp_from = [&distances_from](int a, int b) { return distances_from[a] > distances_from[b]; };
+        auto cmp_to = [&distances_to](int a, int b) { return distances_to[a] > distances_to[b]; };
+        priority_queue<int, vector<int>, decltype(cmp_from)> q_from(cmp_from);
+        priority_queue<int, vector<int>, decltype(cmp_to)> q_to(cmp_to);
+
+        q_from.push(from);
+        distances_from[from] = 0;
+        q_to.push(to);
+        distances_to[to] = 0;
+        int middle = -1;
+        int buff;
+        while(!q_from.empty() && !q_to.empty()) {
+            buff = _dijkstra_step(graph, distances_from, parent_from, (priority_queue<int>*) &q_from, log);
+            if (distances_to[buff] != -1) {
+                middle = buff;
+                break;
+            }
+
+            buff = _dijkstra_step(graph, distances_to, parent_to, (priority_queue<int>*) &q_to, log);
+            if (distances_from[buff] != -1) {
+                middle = buff;
+                break;
+            }
+        }
+
+        if(middle == -1) return vector<int>();
+        int prev_d = -1;
+        pair<int, int> connection{-1, -1};
+        for(int i = 0; i < n; i++)
+        for(int j = 0; j < n; j++)
+        {
+            if(distances_to[j] == -1 || distances_from[i] == -1) continue;
+            if(!graph.is_connected(i, j)) continue;
+            int cur_d = distances_to[j] + distances_from[i] + graph.get_edge(i, j).weight;
+            if(prev_d == -1 || prev_d > cur_d) {
+                connection = {i, j};
+                prev_d = cur_d;
+            }
+        }
+
+        if(prev_d == -1) return vector<int>();
+
+        vector<int> ret;
+        int cur = connection.second;
+        while(cur != to) {
+            ret.push_back(cur);
+            cur = parent_to[cur];
+        }
+        ret.push_back(to);
+
+        reverse(ret.begin(), ret.end());
+        cur = connection.first;
+        while(cur != from) {
+            ret.push_back(cur);
+            cur = parent_from[cur];
+        }
+        ret.push_back(from);
+
+        reverse(ret.begin(), ret.end());
+        return ret;
+    }
+
 }

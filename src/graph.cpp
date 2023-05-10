@@ -150,7 +150,7 @@ string SparseGraph::to_string() const {
 
 string SparseGraph::to_info_string() const {
     stringstream ss;
-    ss<<"Graph(n="<<n<<"; m="<<m<<");";
+    ss<<"SparseGraph(n="<<n<<"; m="<<m<<");";
     return ss.str();
 }
 
