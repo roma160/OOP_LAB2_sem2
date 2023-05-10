@@ -19,7 +19,7 @@ Field::FGraph::Selection::Selection(bool is_selected, ImColor color):
 
 Field::FGraph::FGraph(const Graph& graph, Vec2 point, float R): 
     Graph(graph), points(connections.size()), speeds(connections.size()),
-    points_sel(connections.size()), edges_sel(edges.size())
+    points_sel(connections.size()), edges_sel(edges.size()), edges_anno(edges.size())
 { reset_points_pos(point, R); }
 Field::FGraphLink::FGraphLink(int graph_id, int index): graph_id(graph_id), index(index) {}
 
@@ -36,11 +36,13 @@ void Field::FGraph::add_edge(int from, int to, int weight){
     if(from > to) swap(from, to);
     Graph::add_edge(from, to, weight);
     edges_sel.push_back(Selection());
+    edges_anno.push_back("");
 }
 
 void Field::FGraph::remove_edge(int edge_id){
     Graph::remove_edge(edge_id);
     edges_sel.erase(edges_sel.begin() + edge_id);
+    edges_anno.erase(edges_anno.begin() + edge_id);
 }
 
 
@@ -291,12 +293,22 @@ void Field::display_window(){
                 if(!show_actual_distance) num = to_string(graph.edges[i].weight);
                 else num = to_string((int) round(get_field_distance(
                     g, graph.edges[i].first, graph.edges[i].second)));
+                
                 const auto calc_size = ImGui::CalcTextSize(num.c_str());
                 const auto text_p1 = (a + b) / 2 - (Vec2) calc_size / 2;
                 draw_list->AddRectFilled(text_p1, text_p1 + calc_size, edge_color);
                 draw_list->AddText(text_p1,
                     ImColor(0, 0, 0), num.c_str()
                 );
+
+                if(!graph.edges_anno[i].empty()) { 
+                    const auto anno_size = ImGui::CalcTextSize(graph.edges_anno[i].c_str());
+                    const auto anno_p1 = (a + b) / 2  - (Vec2) anno_size / 2 + Vec2{0, calc_size.y};
+                    draw_list->AddRectFilled(anno_p1, anno_p1 + anno_size, edge_color);
+                    draw_list->AddText(anno_p1,
+                        ImColor(0, 0, 0), graph.edges_anno[i].c_str()
+                    );
+                }
             }
         }
 

@@ -32,6 +32,7 @@ public:
         vector<Vec2> speeds;
 
         vector<Selection> points_sel, edges_sel;
+        vector<string> edges_anno;
 
         FGraph(const Graph& graph, Vec2 point = DEF_GRAPH_LOC, float R = DEF_GRAPH_R);
 
