@@ -4,13 +4,14 @@
 #include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include "algorithms.tpp"
+#include "vec2.h"
 
 #include <vector>
 #include <string>
 #include <sstream>
 #include <regex>
-
-#include "vec2.h"
+#include <fstream>
+#include <istream>
 
 using namespace std;
 
@@ -31,16 +32,29 @@ bool get_int(const string& str, int& ret) {
     return true;
 }
 
-void display_algorithms_window(Field& field) {
+string read_sparse_graph_data(const string filename = "sparse_graph_data.txt") {
+    ifstream file(filename);
+    string ret, buff;
+    while(getline(file, buff))
+        ret += buff + "\n";
+    file.close();
+    return ret;
+}
+
+void display_algorithms_window(Field& field, SparseGraph& sparse_graph) {
     ImGui::Begin("Algorithms window", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::SetWindowSize({300, 500}, ImGuiCond_Once);
 
-    static string graph_data = field.get_graphs()[0].to_string();
+    static string graph_data = field.get_graph(0)->to_string();
+    static string graph_description = field.get_graph(0)->to_info_string();
     if (ImGui::TreeNode("Change graph"))
     {
+        ImGui::Text("Currect graph: %s", graph_description.c_str());
         if (ImGui::Button("Load")) {
             Graph buff;
             if(Graph::from_string(graph_data, buff)){
+                graph_description = buff.to_info_string();
+
                 Graph& cur_graph = *field.get_graph(0);
                 if(cur_graph.includes(buff) || (buff.includes(cur_graph) && 
                     buff.connections.size() <= cur_graph.connections.size())
@@ -58,6 +72,14 @@ void display_algorithms_window(Field& field) {
                     field.remove_graph(0);
                     field.add_graph(buff);
                 }
+            }
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Load headless")) {
+            string sparse_graph_data = read_sparse_graph_data();
+            if(SparseGraph::from_string(sparse_graph_data, sparse_graph)) {
+                graph_description = sparse_graph.to_info_string();
             }
         }
 
@@ -163,6 +185,7 @@ void display_algorithms_window(Field& field) {
             else {
                 Graph& graph = *field.get_graph(0);
                 stringstream log_stream;
+                log_stream<<"The checked nodes:\n";
                 auto res = algos::astar_path(field, 0, from, to, &log_stream);
                 log = log_stream.str();
 
@@ -214,7 +237,7 @@ void display_algorithms_window(Field& field) {
     }
 
     if(!log.empty()){
-        ImGui::Text("The checked nodes:\n%s", log.c_str());
+        ImGui::Text("%s", log.c_str());
     }
 
     ImGui::End();

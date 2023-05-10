@@ -97,7 +97,7 @@ int main(int, char **)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     Graph graph(vector<vector<Graph::Connection>>(6, vector<Graph::Connection>(6, true)));
-
+    SparseGraph sparse_graph;
     Field field(200);
     field.add_graph(graph);
     double start_time = time();
@@ -137,7 +137,7 @@ int main(int, char **)
         field.display_window();
 
         //display_control_window(field);
-        display_algorithms_window(field);
+        display_algorithms_window(field, sparse_graph);
 
         // Rendering
         ImGui::Render();

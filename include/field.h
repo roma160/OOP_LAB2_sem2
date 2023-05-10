@@ -2,7 +2,7 @@
 
 #include "vec2.h"
 #include "linked_list.tpp"
-#include "graph.tpp"
+#include "graph.h"
 
 #include <stddef.h>
 #include <string>
