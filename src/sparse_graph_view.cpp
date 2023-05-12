@@ -6,7 +6,8 @@
 
 using Edge = Graph::Edge;
 
-SparseGraphView::SparseGraphView(): graph(), coordinates(), bounds() {}
+SparseGraphView::SparseGraphView(): graph(), coordinates(), bounds(),
+    current_path(), selected_nodes() {}
 
 bool SparseGraphView::load_graph(string data, const int first_node_index) {
     set<Edge> edges;
@@ -55,6 +56,9 @@ bool SparseGraphView::load_graph(string data, const int first_node_index) {
     graph = SparseGraph(n+1, {edges.begin(), edges.end()});
     this->coordinates = coordinates;
     this->bounds = bounds;
+
+    selected_nodes.resize(graph.n);
+    clear_selection();
     return true;
 }
 
@@ -65,14 +69,6 @@ void SparseGraphView::show_window() {
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
     const auto p = ImGui::GetCursorScreenPos();
     const auto a = (Vec2(ImGui::GetWindowSize()) - Vec2{30, 30}) / bounds;
-
-    // Nodes
-    for(int i = 0; i < graph.n; i++) {
-        draw_list->AddCircleFilled(
-            coordinates[i] * a + p,
-            1.0, ImColor(1.0f, 1.0f, 1.0f, 1.0f)
-        );
-    }
 
     // Edges
     for(const auto &edge : graph.get_edges()) {
@@ -92,8 +88,24 @@ void SparseGraphView::show_window() {
             draw_list->AddLine(
                 coordinates[current_path[i-1]] * a + p,
                 coordinates[current_path[i]] * a + p,
-                ImColor(1.0f, .3f, .3f, .3f),
+                ImColor(1.0f, .3f, .3f, .8f),
                 1.0f
+            );
+        }
+    }
+
+    // Nodes
+    for(int i = 0; i < graph.n; i++) {
+        if(!selected_nodes[i]) {
+            draw_list->AddCircleFilled(
+                coordinates[i] * a + p,
+                1.0, ImColor(1.0f, 1.0f, 1.0f, 1.0f)
+            );
+        }
+        else {
+            draw_list->AddCircleFilled(
+                coordinates[i] * a + p,
+                3, ImColor(.0f, .8f, .0f, 1.0f)
             );
         }
     }
@@ -103,3 +115,10 @@ void SparseGraphView::show_window() {
 
 void SparseGraphView::set_current_path(vector<int> new_path)
 { current_path = new_path; }
+
+void SparseGraphView::set_node_selection(int node_id, bool selection)
+{ selected_nodes[node_id] = selection; }
+void SparseGraphView::clear_selection() {
+    current_path.clear();
+    fill(selected_nodes.begin(), selected_nodes.end(), false);
+}

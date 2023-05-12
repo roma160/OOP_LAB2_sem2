@@ -37,6 +37,7 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
     ImGui::Begin("Algorithms window", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::SetWindowSize({300, 500}, ImGuiCond_Once);
 
+    static bool execute_requested = false;
     static string graph_data = field.get_graph(0)->to_string();
     static string graph_description = field.get_graph(0)->to_info_string();
     ImGui::Text("Currect graph: %s", graph_description.c_str());
@@ -89,6 +90,8 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
         field.disselect_all_edges();
         field.disselect_all_points();
         field.get_graph(0)->clear_annotations();
+
+        sparseGraphView.clear_selection();
     }
 
     static bool incorrect_input = false;
@@ -134,7 +137,9 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
 
     ImGui::Dummy({0, 10});
     if(incorrect_input) ImGui::TextColored(ImVec4(1, 0, 0, 1), "Incorrect input data!");
-    if(ImGui::Button("Execute")) {
+    if(ImGui::Button("Execute") || execute_requested) {
+        execute_requested = false;
+
         incorrect_input = false;
         field.disselect_all_edges();
         field.disselect_all_points();
@@ -223,7 +228,10 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
                 auto res = algos::bidirect_dijkstra_path(sparseGraphView.graph, from, to, &ss);
                 log = ss.str();
 
-                sparseGraphView.set_current_path(res);
+                sparseGraphView.clear_selection();
+                sparseGraphView.set_current_path(res.path);
+                for(int node : res.checked_nodes)
+                    sparseGraphView.set_node_selection(node, true);
             }
         }
     }
@@ -238,7 +246,9 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
         ImGui::InputText("Start point", &from_node_str, ImGuiInputTextFlags_CharsDecimal);
         ImGui::SameLine();
         ImGui::SetNextItemWidth(x - ImGui::CalcTextSize("End point").x);
-        ImGui::InputText("End point", &to_node_str, ImGuiInputTextFlags_CharsDecimal);
+        if(ImGui::InputText("End point", &to_node_str, 
+            ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+        { execute_requested = true; }
         break;
     }
 

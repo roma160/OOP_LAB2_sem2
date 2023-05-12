@@ -8,6 +8,8 @@ using namespace std;
 class SparseGraphView {
 private:
     vector<int> current_path;
+    vector<bool> selected_nodes;
+
 public:
     SparseGraph graph;
     vector<Vec2> coordinates;
@@ -20,4 +22,6 @@ public:
     void show_window();
 
     void set_current_path(vector<int> new_path);
+    void set_node_selection(int node_id, bool selection);
+    void clear_selection();
 };

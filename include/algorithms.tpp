@@ -268,9 +268,17 @@ namespace algos {
         }
         return buff;
     }
-    vector<int> bidirect_dijkstra_path(SparseGraph& graph, int from = 0, int to = -1, ostream* log = nullptr) {
+    struct bidirect_result {
+        vector<int> path;
+        vector<int> checked_nodes;
+
+        bidirect_result(): path(), checked_nodes() {}
+        bidirect_result(vector<int> path, vector<int> checked_nodes):
+            path(path), checked_nodes(checked_nodes) {}
+    };
+    bidirect_result bidirect_dijkstra_path(SparseGraph& graph, int from = 0, int to = -1, ostream* log = nullptr) {
         const int n = graph.n;
-        if(n == 0) return vector<int>();
+        if(n == 0) return {};
         if(to == -1) to = n - 1;
         
         set<int> checked_nodes;
@@ -303,7 +311,7 @@ namespace algos {
             }
         }
 
-        if(middle == -1) return vector<int>();
+        if(middle == -1) return {};
         int prev_d = -1;
         pair<int, int> connection{-1, -1};
         for(int i = 0; i < n; i++)
@@ -318,7 +326,7 @@ namespace algos {
             }
         }
 
-        if(prev_d == -1) return vector<int>();
+        if(prev_d == -1) return {};
 
         vector<int> ret;
         int cur = connection.second;
@@ -356,7 +364,7 @@ namespace algos {
             }
         }
 
-        return ret;
+        return {ret, {checked_nodes.begin(), checked_nodes.end()}};
     }
 
 }
