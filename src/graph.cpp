@@ -1,11 +1,10 @@
 #include "graph.h"
 
+#include "utils.tpp"
+
 #include <iostream>
 
 using namespace std;
-
-int min(int a, int b) { return a > b ? b : a; }
-int max(int a, int b) { return a > b ? a : b; }
 
 Graph::Connection::Connection(): weight(0), connected(false) {}
 Graph::Connection::Connection(bool connected): weight(connected), connected(connected) {}

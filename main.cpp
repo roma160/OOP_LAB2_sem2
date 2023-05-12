@@ -15,6 +15,7 @@
 #include "field.h"
 #include "control_window.h"
 #include "algorithms_window.h"
+#include "sparse_graph_view.h"
 
 using namespace std;
 
@@ -96,10 +97,12 @@ int main(int, char **)
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    Graph graph(vector<vector<Graph::Connection>>(6, vector<Graph::Connection>(6, true)));
+    // GRAPH DATA
     SparseGraph sparse_graph;
     Field field(200);
-    field.add_graph(graph);
+    field.add_graph(Graph(
+        {6, vector<Graph::Connection>(6, true)}
+    ));
     double start_time = time();
     double dt = 0;
 

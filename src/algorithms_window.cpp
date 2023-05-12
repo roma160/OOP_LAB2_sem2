@@ -5,6 +5,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "algorithms.tpp"
 #include "vec2.h"
+#include "utils.tpp"
 
 #include <vector>
 #include <string>
@@ -30,15 +31,6 @@ bool get_int(const string& str, int& ret) {
         return false;
     }
     return true;
-}
-
-string read_sparse_graph_data(const string filename = "sparse_graph_data.txt") {
-    ifstream file(filename);
-    string ret, buff;
-    while(getline(file, buff))
-        ret += buff + "\n";
-    file.close();
-    return ret;
 }
 
 void display_algorithms_window(Field& field, SparseGraph& sparse_graph) {
@@ -77,8 +69,8 @@ void display_algorithms_window(Field& field, SparseGraph& sparse_graph) {
 
         ImGui::SameLine();
         if (ImGui::Button("Load headless")) {
-            string sparse_graph_data = read_sparse_graph_data();
-            if(SparseGraph::from_string(sparse_graph_data, sparse_graph)) {
+            string graph_data = read_file("graph_data.txt");
+            if(SparseGraph::from_string(graph_data, sparse_graph)) {
                 graph_description = sparse_graph.to_info_string();
             }
         }

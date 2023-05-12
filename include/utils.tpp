@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <ostream>
+#include <fstream>
 #include <chrono>
 
 #include <vector>
@@ -39,3 +40,13 @@ inline float sign(float a){
 }
 
 inline int min(int a, int b) { return a > b ? b : a; }
+inline int max(int a, int b) { return a > b ? a : b; }
+
+inline string read_file(const string filename) {
+    ifstream file(filename);
+    string ret, buff;
+    while(getline(file, buff))
+        ret += buff + "\n";
+    file.close();
+    return ret;
+}
