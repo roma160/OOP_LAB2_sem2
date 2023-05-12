@@ -79,4 +79,6 @@ public:
     string to_string() const;
     string to_info_string() const;
     static bool from_string(const string& s, SparseGraph& graph);
+
+    const map<pair<int, int>, Edge> &get_edges() const;
 };

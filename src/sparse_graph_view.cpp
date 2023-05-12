@@ -8,7 +8,7 @@ using Edge = Graph::Edge;
 
 SparseGraphView::SparseGraphView(): graph(), coordinates(), bounds() {}
 
-bool SparseGraphView::load_graph(string data, const int first_node_index = 1) {
+bool SparseGraphView::load_graph(string data, const int first_node_index) {
     set<Edge> edges;
     vector<Vec2> coordinates;
     Vec2 bounds;
@@ -27,7 +27,7 @@ bool SparseGraphView::load_graph(string data, const int first_node_index = 1) {
             coordinates = vector<Vec2>(n+1);
             continue;
         }
-        else if(coordinate_index < n) {
+        else if(coordinate_index < n + first_node_index) {
             static const regex r("(\\d+)\\s+(\\d+)");
             if(!regex_search(line, match, r)) return false;
             if(match.size() != 3) return false;
@@ -63,11 +63,43 @@ void SparseGraphView::show_window() {
     ImGui::SetWindowSize({500, 500}, ImGuiCond_Once);
 
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
+    const auto p = ImGui::GetCursorScreenPos();
+    const auto a = (Vec2(ImGui::GetWindowSize()) - Vec2{30, 30}) / bounds;
+
+    // Nodes
     for(int i = 0; i < graph.n; i++) {
         draw_list->AddCircleFilled(
-            coordinates[i], 1.0, ImColor(1.0f, 1.0f, 1.0f, 1.0f)
+            coordinates[i] * a + p,
+            1.0, ImColor(1.0f, 1.0f, 1.0f, 1.0f)
         );
+    }
+
+    // Edges
+    for(const auto &edge : graph.get_edges()) {
+        if (!edge.second.connected) continue;
+        draw_list->AddLine(
+            coordinates[edge.first.first] * a + p,
+            coordinates[edge.first.second] * a + p,
+            ImColor(.3f, .3f, .3f, .3f),
+            0.7f
+        );
+    }
+
+    // Path
+    if(current_path.size() > 0){
+        for(int i = 1; i < current_path.size(); i++) {
+            if (!graph.is_connected(current_path[i-1], current_path[i])) continue;
+            draw_list->AddLine(
+                coordinates[current_path[i-1]] * a + p,
+                coordinates[current_path[i]] * a + p,
+                ImColor(1.0f, .3f, .3f, .3f),
+                1.0f
+            );
+        }
     }
 
     ImGui::End();
 }
+
+void SparseGraphView::set_current_path(vector<int> new_path)
+{ current_path = new_path; }

@@ -33,7 +33,7 @@ bool get_int(const string& str, int& ret) {
     return true;
 }
 
-void display_algorithms_window(Field& field, SparseGraph& sparse_graph) {
+void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
     ImGui::Begin("Algorithms window", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::SetWindowSize({300, 500}, ImGuiCond_Once);
 
@@ -69,9 +69,9 @@ void display_algorithms_window(Field& field, SparseGraph& sparse_graph) {
 
         ImGui::SameLine();
         if (ImGui::Button("Load headless")) {
-            string graph_data = read_file("graph_data.txt");
-            if(SparseGraph::from_string(graph_data, sparse_graph)) {
-                graph_description = sparse_graph.to_info_string();
+            string graph_data = read_file("sparse_graph_data.txt");
+            if(sparseGraphView.load_graph(graph_data)) {
+                graph_description = sparseGraphView.graph.to_info_string();
             }
         }
 
@@ -220,14 +220,10 @@ void display_algorithms_window(Field& field, SparseGraph& sparse_graph) {
                 incorrect_input = true;
             else {
                 stringstream ss;
-                auto res = algos::bidirect_dijkstra_path(sparse_graph, from, to, &ss);
-                ss << "\n";
-                for(int i = 0; i < res.size(); i++){
-                    ss << res[i];
-                    if(i < res.size() - 1)
-                        ss << " - ";
-                }
+                auto res = algos::bidirect_dijkstra_path(sparseGraphView.graph, from, to, &ss);
                 log = ss.str();
+
+                sparseGraphView.set_current_path(res);
             }
         }
     }

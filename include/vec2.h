@@ -14,23 +14,25 @@ public:
     Vec2(ImVec2 vec) : ImVec2(vec) {}
     Vec2(float x, float y): ImVec2(x, y) {}
 
-    Vec2 operator+(const Vec2 &b) const { return {x + b.x, y + b.y}; }
-    Vec2& operator+=(const Vec2 &b) {
+    inline Vec2 operator+(const Vec2 &b) const { return {x + b.x, y + b.y}; }
+    inline Vec2& operator+=(const Vec2 &b) {
         x += b.x; y += b.y;
         return *this;
     }
-    Vec2 operator-() const { return {-x, -y}; }
-    Vec2 operator-(const Vec2 &b) const { return {x - b.x, y - b.y}; }
+    inline Vec2 operator-() const { return {-x, -y}; }
+    inline Vec2 operator-(const Vec2 &b) const { return {x - b.x, y - b.y}; }
 
-    Vec2 operator*(const float b) const { return {x * b, y * b}; }
-    Vec2 &operator*=(const float b) {
+    inline Vec2 operator*(const float b) const { return {x * b, y * b}; }
+    inline Vec2 operator*(const Vec2 b) const { return {x * b.x, y * b.y}; }
+    inline Vec2 &operator*=(const float b) {
         x *= b; y *= b;
         return *this;
     }
-    Vec2 operator/(float b) const { return {x / b, y / b}; }
+    inline Vec2 operator/(const Vec2 b) const { return {x / b.x, y / b.y}; }
+    inline Vec2 operator/(float b) const { return {x / b, y / b}; }
 
-    float abs() const { return sqrt(x * x + y * y); }
-    Vec2 norm() const { return *this / abs(); }
+    inline float abs() const { return sqrt(x * x + y * y); }
+    inline Vec2 norm() const { return *this / abs(); }
 
     string to_string() const
     {

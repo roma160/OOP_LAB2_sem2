@@ -260,8 +260,8 @@ namespace algos {
                 distances[i] > distances[buff] + edge.weight
             ) {
                 distances[i] = distances[buff] + edge.weight;
-                if(log != nullptr)
-                    *log<<"Node: "<<i<<" (d="<<distances[i]<<")\n";
+                // if(log != nullptr)
+                //     *log<<"Node: "<<i<<" (d="<<distances[i]<<")\n";
                 cameFrom[i] = buff;
                 q->push(i);
             }
@@ -273,6 +273,7 @@ namespace algos {
         if(n == 0) return vector<int>();
         if(to == -1) to = n - 1;
         
+        set<int> checked_nodes;
         vector<int> distances_from(n, -1), distances_to(n, -1),
             parent_from(n, -1), parent_to(n, -1);
         auto cmp_from = [&distances_from](int a, int b) { return distances_from[a] > distances_from[b]; };
@@ -288,12 +289,14 @@ namespace algos {
         int buff;
         while(!q_from.empty() && !q_to.empty()) {
             buff = _dijkstra_step(graph, distances_from, parent_from, (priority_queue<int>*) &q_from, log);
+            checked_nodes.insert(buff);
             if (distances_to[buff] != -1) {
                 middle = buff;
                 break;
             }
 
             buff = _dijkstra_step(graph, distances_to, parent_to, (priority_queue<int>*) &q_to, log);
+            checked_nodes.insert(buff);
             if (distances_from[buff] != -1) {
                 middle = buff;
                 break;
@@ -334,6 +337,25 @@ namespace algos {
         ret.push_back(from);
 
         reverse(ret.begin(), ret.end());
+
+        if(log != nullptr){
+            *log << "Number of checked nodes: " << checked_nodes.size() << "\n";
+            *log << "Checked nodes:\n";
+            int count = 0;
+            for(int i : checked_nodes){
+                *log << i << " ";
+                count++;
+                if(count > 10) *log << "\n";
+            }
+
+            *log << "\nResulting path:\n";
+            for(int i = 0; i < ret.size(); i++){
+                *log << ret[i];
+                if(i < ret.size() - 1)
+                    *log << " - ";
+            }
+        }
+
         return ret;
     }
 

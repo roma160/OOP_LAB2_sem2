@@ -98,11 +98,14 @@ int main(int, char **)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // GRAPH DATA
-    SparseGraph sparse_graph;
     Field field(200);
     field.add_graph(Graph(
         {6, vector<Graph::Connection>(6, true)}
     ));
+
+    SparseGraphView sparseGraphView;
+    //sparseGraphView.load_graph(read_file("sparse_graph_data.txt"));
+
     double start_time = time();
     double dt = 0;
 
@@ -140,7 +143,8 @@ int main(int, char **)
         field.display_window();
 
         //display_control_window(field);
-        display_algorithms_window(field, sparse_graph);
+        sparseGraphView.show_window();
+        display_algorithms_window(field, sparseGraphView);
 
         // Rendering
         ImGui::Render();

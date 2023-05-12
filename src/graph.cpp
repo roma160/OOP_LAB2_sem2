@@ -177,3 +177,5 @@ bool SparseGraph::from_string(const string& s, SparseGraph& graph) {
     graph = SparseGraph(n + 1, {edges.begin(), edges.end()});
     return true;
 }
+
+const map<pair<int, int>, SparseGraph::Edge> &SparseGraph::get_edges() const { return edges; }
