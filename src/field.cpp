@@ -194,9 +194,9 @@ void Field::display_window(){
     static FGraphLink selected = {-1, 0};
 
     const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 20, main_viewport->WorkPos.y + 20), ImGuiCond_Appearing);
+    ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 20, main_viewport->WorkPos.y + 20), ImGuiCond_Once);
     ImGui::Begin("Field", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
-    ImGui::SetWindowSize(bounds, ImGuiCond_Appearing);
+    ImGui::SetWindowSize(bounds, ImGuiCond_Once);
     bounds = ImGui::GetWindowSize();
 
     const Vec2 const_p = ImGui::GetCursorScreenPos();
