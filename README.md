@@ -28,5 +28,5 @@ cmake --build ./build/emscripten --target main
 ```
 3. If there are no errors, this must be the thing. Now you could serve a Python server from a `emscripten.index` folder:
 ```console
-python -m http --directory ./emscripten.index 8000
+python -m http.server --directory ./emscripten.index 8000
 ```
