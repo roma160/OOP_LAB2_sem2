@@ -40,15 +40,15 @@ static void MainLoopForEmscripten()     { MainLoopForEmscriptenP(); }
 
 // MSVC compiler main() error workaround
 // https://stackoverflow.com/a/58819006/8302811
-#ifdef _WIN32
-int main(int, char **);
-int APIENTRY WinMain(HINSTANCE hInstance,
-                     HINSTANCE hPrevInstance,
-                     LPSTR lpCmdLine, int nCmdShow)
-{
-    return main(__argc, __argv);
-}
-#endif
+// #ifdef _WIN32
+// int main(int, char **);
+// int APIENTRY WinMain(HINSTANCE hInstance,
+//                      HINSTANCE hPrevInstance,
+//                      LPSTR lpCmdLine, int nCmdShow)
+// {
+//     return main(__argc, __argv);
+// }
+// #endif
 
 // Main code
 int main(int, char **)

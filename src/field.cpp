@@ -210,17 +210,22 @@ void Field::display_window(){
     ImGui::SetItemAllowOverlap();
 
     const Vec2 mouse = ImGui::GetMousePos();
+    Vec2 middle_mouse_delta;
 
     // Dragging feature
-    if(!ImGui::IsMouseDown(ImGuiMouseButton_Middle)){
-        if(was_middle_mouse) {
-            middle_mouse_shift += mouse - middle_mouse_prev;
-            was_middle_mouse = false;
+    if(ImGui::IsMouseDown(ImGuiMouseButton_Middle)) {
+        if(!was_middle_mouse) {
+            was_middle_mouse = true;
+            middle_mouse_prev = mouse;
         }
-        middle_mouse_prev = mouse;
+        middle_mouse_delta = mouse - middle_mouse_prev;
     }
-    else if(!was_middle_mouse) was_middle_mouse = true;
-    const auto p = const_p + middle_mouse_shift + mouse - middle_mouse_prev;
+    else if(was_middle_mouse) {
+        middle_mouse_shift += mouse - middle_mouse_prev;
+        middle_mouse_delta = {0, 0};
+        was_middle_mouse = false;
+    }
+    const auto p = const_p + middle_mouse_shift + middle_mouse_delta;
 
     if (selected.graph_id == -1 && ImGui::IsItemClicked(ImGuiMouseButton_Left))
     {
