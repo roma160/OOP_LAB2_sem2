@@ -24,4 +24,6 @@ public:
     void set_current_path(vector<int> new_path);
     void set_node_selection(int node_id, bool selection);
     void clear_selection();
+
+    float get_distance(int node_a, int node_b) const;
 };

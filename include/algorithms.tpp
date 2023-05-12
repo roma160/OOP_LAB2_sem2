@@ -189,27 +189,29 @@ namespace algos {
     }
 
     // Task 6
-    bool _ff_bfs(Graph& graph, int from, int to, vector<int>& comeFrom) {
-        const int n = graph.connections.size();
-        vector<bool> visited(n);
-        visited[from] = true;
-        queue<int> q;
-        q.push(from);
-        while(!q.empty()) {
-            int buff = q.front();
-            q.pop();
-            for(int i = 0; i < n; i++)
-                if(graph.connections[buff][i].connected && 
-                    graph.connections[buff][i].weight > 0 &&
-                    !visited[i]
-                ){
-                    q.push(i);
-                    visited[i] = true;
-                    comeFrom[i] = buff;
-                }
+    namespace {
+        bool _ff_bfs(Graph& graph, int from, int to, vector<int>& comeFrom) {
+            const int n = graph.connections.size();
+            vector<bool> visited(n);
+            visited[from] = true;
+            queue<int> q;
+            q.push(from);
+            while(!q.empty()) {
+                int buff = q.front();
+                q.pop();
+                for(int i = 0; i < n; i++)
+                    if(graph.connections[buff][i].connected && 
+                        graph.connections[buff][i].weight > 0 &&
+                        !visited[i]
+                    ){
+                        q.push(i);
+                        visited[i] = true;
+                        comeFrom[i] = buff;
+                    }
+            }
+            return visited[to];
         }
-        return visited[to];
-    }
+    };
     struct FFMaxFlowRes {
         int maxFlow;
         Graph flowData;
@@ -250,23 +252,46 @@ namespace algos {
     }
 
     // Task 7
-    int _dijkstra_step(SparseGraph& graph, vector<int>& distances, vector<int>& cameFrom, priority_queue<int>* q, ostream* log) {
-        int buff = q->top();
-        q->pop();
-        for(int i = 0; i < graph.n; i++) {
-            if(!graph.is_connected(buff, i)) continue;
-            const auto& edge = graph.get_edge(buff, i);
-            if(distances[i] == -1 || 
-                distances[i] > distances[buff] + edge.weight
-            ) {
-                distances[i] = distances[buff] + edge.weight;
-                // if(log != nullptr)
-                //     *log<<"Node: "<<i<<" (d="<<distances[i]<<")\n";
-                cameFrom[i] = buff;
-                q->push(i);
+    namespace {
+        struct _comparator {
+            const vector<int> *distances;
+            const SparseGraphView* graph_view;
+            const int node;
+
+            _comparator(const vector<int> *distances, const SparseGraphView* graph_view = nullptr, int node = -1):
+                distances(distances), graph_view(graph_view), node(node) {}
+
+            bool operator()(int a, const int b) const { 
+                if (graph_view != nullptr) {
+                    const float ad = distances->at(a) + graph_view->get_distance(a, node);
+                    const float bd = distances->at(b) + graph_view->get_distance(b, node);
+                    return ad > bd;
+                }
+                else {
+                    return distances->at(a) > distances->at(b);
+                }
             }
+        };
+
+        int _dijkstra_step(
+            SparseGraph& graph, vector<int>& distances, vector<int>& cameFrom,
+            priority_queue<int, vector<int>, _comparator>* q, ostream* log
+        ) {
+            int buff = q->top();
+            q->pop();
+            for(int i = 0; i < graph.n; i++) {
+                if(!graph.is_connected(buff, i)) continue;
+                const auto& edge = graph.get_edge(buff, i);
+                if(distances[i] == -1 || 
+                    distances[i] > distances[buff] + edge.weight
+                ) {
+                    distances[i] = distances[buff] + edge.weight;
+                    cameFrom[i] = buff;
+                    q->push(i);
+                }
+            }
+            return buff;
         }
-        return buff;
     }
     struct bidirect_result {
         vector<int> path;
@@ -284,10 +309,8 @@ namespace algos {
         set<int> checked_nodes;
         vector<int> distances_from(n, -1), distances_to(n, -1),
             parent_from(n, -1), parent_to(n, -1);
-        auto cmp_from = [&distances_from](int a, int b) { return distances_from[a] > distances_from[b]; };
-        auto cmp_to = [&distances_to](int a, int b) { return distances_to[a] > distances_to[b]; };
-        priority_queue<int, vector<int>, decltype(cmp_from)> q_from(cmp_from);
-        priority_queue<int, vector<int>, decltype(cmp_to)> q_to(cmp_to);
+        _comparator from_cmp(&distances_from), to_cmp(&distances_to);
+        priority_queue<int, vector<int>, _comparator> q_from(from_cmp), q_to(to_cmp);
 
         q_from.push(from);
         distances_from[from] = 0;
@@ -296,14 +319,14 @@ namespace algos {
         int middle = -1;
         int buff;
         while(!q_from.empty() && !q_to.empty()) {
-            buff = _dijkstra_step(graph, distances_from, parent_from, (priority_queue<int>*) &q_from, log);
+            buff = _dijkstra_step(graph, distances_from, parent_from, &q_from, log);
             checked_nodes.insert(buff);
             if (distances_to[buff] != -1) {
                 middle = buff;
                 break;
             }
 
-            buff = _dijkstra_step(graph, distances_to, parent_to, (priority_queue<int>*) &q_to, log);
+            buff = _dijkstra_step(graph, distances_to, parent_to, &q_to, log);
             checked_nodes.insert(buff);
             if (distances_from[buff] != -1) {
                 middle = buff;
@@ -367,4 +390,93 @@ namespace algos {
         return {ret, {checked_nodes.begin(), checked_nodes.end()}};
     }
 
+    // Task 8
+    bidirect_result bidirect_astar_path(SparseGraphView& graph_view, int from = 0, int to = -1, ostream* log = nullptr) {
+        const int n = graph_view.graph.n;
+        if(n == 0) return {};
+        if(to == -1) to = n - 1;
+        
+        set<int> checked_nodes;
+        vector<int> distances_from(n, -1), distances_to(n, -1),
+            parent_from(n, -1), parent_to(n, -1);
+        _comparator from_cmp(&distances_from, &graph_view, from), to_cmp(&distances_to, &graph_view, to);
+        priority_queue<int, vector<int>, _comparator> q_from(from_cmp), q_to(to_cmp);
+
+        q_from.push(from);
+        distances_from[from] = 0;
+        q_to.push(to);
+        distances_to[to] = 0;
+        int middle = -1;
+        int buff;
+        while(!q_from.empty() && !q_to.empty()) {
+            buff = _dijkstra_step(graph_view.graph, distances_from, parent_from, &q_from, log);
+            checked_nodes.insert(buff);
+            if (distances_to[buff] != -1) {
+                middle = buff;
+                break;
+            }
+
+            buff = _dijkstra_step(graph_view.graph, distances_to, parent_to, &q_to, log);
+            checked_nodes.insert(buff);
+            if (distances_from[buff] != -1) {
+                middle = buff;
+                break;
+            }
+        }
+
+        if(middle == -1) return {};
+        int prev_d = -1;
+        pair<int, int> connection{-1, -1};
+        for(int i = 0; i < n; i++)
+        for(int j = 0; j < n; j++)
+        {
+            if(distances_to[j] == -1 || distances_from[i] == -1) continue;
+            if(!graph_view.graph.is_connected(i, j)) continue;
+            int cur_d = distances_to[j] + distances_from[i] + graph_view.graph.get_edge(i, j).weight;
+            if(prev_d == -1 || prev_d > cur_d) {
+                connection = {i, j};
+                prev_d = cur_d;
+            }
+        }
+
+        if(prev_d == -1) return {};
+
+        vector<int> ret;
+        int cur = connection.second;
+        while(cur != to) {
+            ret.push_back(cur);
+            cur = parent_to[cur];
+        }
+        ret.push_back(to);
+
+        reverse(ret.begin(), ret.end());
+        cur = connection.first;
+        while(cur != from) {
+            ret.push_back(cur);
+            cur = parent_from[cur];
+        }
+        ret.push_back(from);
+
+        reverse(ret.begin(), ret.end());
+
+        if(log != nullptr){
+            *log << "Number of checked nodes: " << checked_nodes.size() << "\n";
+            *log << "Checked nodes:\n";
+            int count = 0;
+            for(int i : checked_nodes){
+                *log << i << " ";
+                count++;
+                if(count > 10) *log << "\n";
+            }
+
+            *log << "\nResulting path:\n";
+            for(int i = 0; i < ret.size(); i++){
+                *log << ret[i];
+                if(i < ret.size() - 1)
+                    *log << " - ";
+            }
+        }
+
+        return {ret, {checked_nodes.begin(), checked_nodes.end()}};
+    }
 }

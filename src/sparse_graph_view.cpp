@@ -122,3 +122,6 @@ void SparseGraphView::clear_selection() {
     current_path.clear();
     fill(selected_nodes.begin(), selected_nodes.end(), false);
 }
+
+float SparseGraphView::get_distance(int node_a, int node_b) const
+{ return (coordinates[node_a] - coordinates[node_b]).abs(); }

@@ -102,7 +102,8 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
         "1. BFS", "2. DFS", "3. Prim's min tree",
         "4. Dijkstra's min path", "5. A* min path",
         "6. FordFulkerson max flow",
-        "7. Bidirect Dijkstra's min path"
+        "7. Bidirect Dijkstra's min path",
+        "8. Bidirect A* min path",
     };
     static int item_current_idx = algorithms.size() - 1;
     if (ImGui::BeginCombo("Algorithm", algorithms[item_current_idx].c_str()))
@@ -132,7 +133,7 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
     }
 
     // Algortithm control
-    static string from_node_str = to_string(0);
+    static string from_node_str = to_string(1);
     static string to_node_str = to_string(field.get_graph(0)->connections.size() - 1);
 
     ImGui::Dummy({0, 10});
@@ -234,6 +235,21 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
                     sparseGraphView.set_node_selection(node, true);
             }
         }
+        else if(item_current_idx == 7) {
+            int from = -1, to = -1;
+            if(!get_int(from_node_str, from) || !get_int(to_node_str, to))
+                incorrect_input = true;
+            else {
+                stringstream ss;
+                auto res = algos::bidirect_astar_path(sparseGraphView, from, to, &ss);
+                log = ss.str();
+
+                sparseGraphView.clear_selection();
+                sparseGraphView.set_current_path(res.path);
+                for(int node : res.checked_nodes)
+                    sparseGraphView.set_node_selection(node, true);
+            }
+        }
     }
     switch (item_current_idx)
     {
@@ -241,6 +257,7 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
     case 4:
     case 5:
     case 6:
+    case 7:
         const float x = ImGui::GetContentRegionAvail().x / 2 - 10;
         ImGui::SetNextItemWidth(x - ImGui::CalcTextSize("Start point").x);
         ImGui::InputText("Start point", &from_node_str, ImGuiInputTextFlags_CharsDecimal);
