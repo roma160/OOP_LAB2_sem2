@@ -129,14 +129,6 @@ add_dependencies(main copy_graph_data)
 
 if(EMSCRIPTEN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os")
-    # file(GLOB_RECURSE EMSCRIPTEN_INDEX "${CMAKE_SOURCE_DIR}/emscripten.index/*")
-    # add_custom_target(
-    #     copy_index
-    #     DEPENDS copy_index_command
-    #     COMMENT "Copying index files to a build directory: ${CMAKE_BINARY_DIR}"
-    # )
-    # add_dependencies(main copy_index)
-    # emscripten.index
 
     set(
         JS_RESULT
@@ -144,7 +136,7 @@ if(EMSCRIPTEN)
         "${CMAKE_BINARY_DIR}/main.wasm"
     )
     foreach(F IN LISTS JS_RESULT)
-    set(INDEX_DIR "${CMAKE_SOURCE_DIR}/emscripten.index")
+    set(INDEX_DIR "${CMAKE_SOURCE_DIR}/docs")
     add_custom_command(
         TARGET main POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${F} ${INDEX_DIR}
