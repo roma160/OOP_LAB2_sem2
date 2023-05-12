@@ -1,7 +1,6 @@
 #pragma once
 
 #include "vec2.h"
-#include "linked_list.tpp"
 #include "graph.h"
 
 #include <stddef.h>
@@ -10,6 +9,7 @@
 #include <cmath>
 #include <algorithm>
 #include <map>
+#include <list>
 
 using namespace std;
 
@@ -34,9 +34,7 @@ public:
         vector<Selection> points_sel, edges_sel;
         vector<string> edges_anno;
 
-        FGraph(const Graph& graph, Vec2 point = DEF_GRAPH_LOC, float R = DEF_GRAPH_R);
-
-        void reset_points_pos(Vec2 point = DEF_GRAPH_LOC, float R = DEF_GRAPH_R);
+        FGraph(const Graph& graph);
 
         void add_edge(int from, int to, int weight = 1) override;
         void remove_edge(int edge_id) override;
@@ -70,7 +68,7 @@ private:
     Vec2 middle_mouse_shift;
 
     vector<FGraph> graphs;
-    map<int, map<int, linked_list_root<FGraphLink>>> field;
+    map<int, map<int, list<FGraphLink>>> field;
 
     pair<int, int> get_field_index(const Vec2& point) const;
 
@@ -91,6 +89,8 @@ public:
     void do_tick(float dt, Vec2 (*force_function)(Vec2, float, ForceType) = &def_compute_force);
 
     void display_window();
+
+    void reset_points_pos(int graph_id = 0, Vec2 point = DEF_GRAPH_LOC, float R = DEF_GRAPH_R);
 
     void toggle_point_select(int point_id, int graph_id = 0, ImColor color = ImColor(1.0f, 0.0f, 0.0f, 1.0f));
     void select_point(int point_id, int graph_id = 0, ImColor color = ImColor(1.0f, 0.0f, 0.0f, 1.0f));

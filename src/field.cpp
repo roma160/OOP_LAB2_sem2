@@ -17,20 +17,10 @@ const float Field::DEF_GRAPH_R = 100;
 Field::FGraph::Selection::Selection(bool is_selected, ImColor color):
     is_selected(is_selected), color(color) {}
 
-Field::FGraph::FGraph(const Graph& graph, Vec2 point, float R): 
+Field::FGraph::FGraph(const Graph& graph): 
     Graph(graph), points(connections.size()), speeds(connections.size()),
-    points_sel(connections.size()), edges_sel(edges.size()), edges_anno(edges.size())
-{ reset_points_pos(point, R); }
+    points_sel(connections.size()), edges_sel(edges.size()), edges_anno(edges.size()) {}
 Field::FGraphLink::FGraphLink(int graph_id, int index): graph_id(graph_id), index(index) {}
-
-void Field::FGraph::reset_points_pos(Vec2 point, float R) {
-    const int n = connections.size();
-    for(int i = 0; i < n; i++) {
-        const float alpha = 2 * i * M_PI / n;
-        points[i] = Vec2{ cos(alpha), sin(alpha) } * R + point;
-        speeds[i] = {0, 0};
-    }
-}
 
 void Field::FGraph::add_edge(int from, int to, int weight){
     if(from > to) swap(from, to);
@@ -61,7 +51,7 @@ pair<int, int> Field::get_field_index(const Vec2& point) const {
 }
 
 void Field::remove_from_field(const pair<int, int>& field_index, FGraphLink point_index) {
-    field[field_index.first][field_index.second].remove_val(point_index);
+    field[field_index.first][field_index.second].remove(point_index);
 }
 
 void Field::add_to_field(const pair<int, int>& field_index, FGraphLink point_index) {
@@ -69,8 +59,10 @@ void Field::add_to_field(const pair<int, int>& field_index, FGraphLink point_ind
 }
 
 int Field::add_graph(const Graph& graph, Vec2 point, float R) {
-    graphs.push_back(FGraph(graph, point, R));
+    graphs.push_back(FGraph(graph));
     const int graph_id = graphs.size() - 1;
+    reset_points_pos(graph_id, point, R);
+
     auto& fgraph = graphs[graph_id];
     for(int i = 0; i < fgraph.connections.size(); i++){
         const auto field_index = get_field_index(fgraph.points[i]);
@@ -139,11 +131,10 @@ void Field::do_tick(float dt, Vec2 (*force_function)(Vec2, float, ForceType)){
             for (int dx = -1; dx <= 1; dx++)
             for (int dy = -1; dy <= 1; dy++) {
                 const auto& list = field[field_index.first + dx][field_index.second + dy];
-                if(list.size == 0) continue;
-                auto buff = list.first;
-                for(; buff != nullptr; buff = buff->next){
-                    if (buff->val == i || graphs[g].connections[i.index][buff->val.index]) continue;
-                    const Vec2 &point_b = graphs[buff->val.graph_id].points[buff->val.index];
+                if(list.size() == 0) continue;
+                for(auto buff : list) {
+                    if (buff == i || graphs[g].connections[i.index][buff.index]) continue;
+                    const Vec2 &point_b = graphs[buff.graph_id].points[buff.index];
                     forces[i.graph_id][i.index] += force_function(
                         point_b - point, cell_size, Node);
                 }
@@ -186,6 +177,27 @@ void Field::recalculate_cell_for_point(const pair<int, int>& old_field_index, FG
     if(old_field_index != new_field_index){
         remove_from_field(old_field_index, point_index);
         add_to_field(new_field_index, point_index);
+    }
+}
+
+void Field::reset_points_pos(int graph_id, Vec2 point, float R) {
+    FGraph& graph = graphs[graph_id];
+    const int n = graph.connections.size();
+    for(int i = 0; i < n; i++) {
+        // Removing the old one from the field
+        {
+            const auto field_index = get_field_index(graph.points[i]);
+            remove_from_field(field_index, { graph_id, i });
+        }
+
+        // Setting new position
+        const float alpha = 2 * i * M_PI / n;
+        graph.points[i] = Vec2{ cos(alpha), sin(alpha) } * R + point;
+        graph.speeds[i] = {0, 0};
+        {
+            const auto field_index = get_field_index(graph.points[i]);
+            add_to_field(field_index, { graph_id, i });
+        }
     }
 }
 
@@ -235,11 +247,11 @@ void Field::display_window(){
         for(int dx = -1; dx <= 0 && selected.graph_id == -1; dx++)
         for(int dy = -1; dy <= 0 && selected.graph_id == -1; dy++){
             const auto& list = field[field_index.first + dx + shift_x][field_index.second + dy + shift_y];
-            if(list.size == 0) continue;
-            auto buff = list.first;
-            for(; buff != nullptr && selected.graph_id == -1; buff = buff->next){
-                const Vec2 &point = graphs[buff->val.graph_id].points[buff->val.index];
-                if ((point + p - mouse).abs() <= R) selected = buff->val;
+            if(list.size() == 0) continue;
+            for(auto buff : list){
+                if(selected.graph_id != -1) break;
+                const Vec2 &point = graphs[buff.graph_id].points[buff.index];
+                if ((point + p - mouse).abs() <= R) selected = buff;
             }
         }
     }
@@ -266,8 +278,8 @@ void Field::display_window(){
     ImGui::Checkbox("Bounds", &bound_forces);
     ImGui::SameLine();
     if(ImGui::Button("Reset pos")) {
-        for(FGraph& graph : graphs)
-            graph.reset_points_pos();
+        for(int i = 0; i < graphs.size(); i++)
+            reset_points_pos(i);
     }
 
     ImGui::Checkbox("node_i", &show_node_ids);
@@ -349,7 +361,7 @@ void Field::display_window(){
             if(j->first < 0 || j->first * cell_size > available_space.y) continue;
             ImGui::SetCursorPos(cursor + (p - const_p) + Vec2{i->first * cell_size, j->first * cell_size});
             {
-                string num = to_string(j->second.size);
+                string num = to_string(j->second.size());
                 ImGui::TextColored(ImVec4(0, 255, 0, 255), num.c_str());
             }
         }
