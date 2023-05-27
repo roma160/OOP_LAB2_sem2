@@ -181,7 +181,7 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
             algos::bfs(field, 0, 0, &steps.max, steps.cur);
         }
         else if(item_current_idx == 1) {
-            algos::dfs(field, 0, 0);
+            algos::dfs(field, 0, 0, &steps.max, steps.cur);
         }
         else if(item_current_idx == 2) {
             const int start_point = 0;

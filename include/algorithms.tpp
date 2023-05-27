@@ -12,6 +12,11 @@
 using namespace std;
 
 namespace algos {
+    namespace {
+        ImColor GRAY_COLOR = {{0.41, 0.41, 0.41, 1}};
+        ImColor BLUE_COLOR = {{0.102, 0.601, 0.850, 1}};
+    }
+
     // TASK 1
     void bfs(
         Field& field, int graph_id, int start_point = 0,
@@ -36,7 +41,7 @@ namespace algos {
         visited[start_point] = true;
         field.select_point(
             start_point, graph_id,
-            {{0.102, 0.601, 0.850, 1}}
+            BLUE_COLOR
         );
         if(step == steps_counter)
             return;
@@ -46,7 +51,7 @@ namespace algos {
             int buff = q.front();
             field.select_point(
                 buff, graph_id,
-                {{0.41, 0.41, 0.41, 1}}
+                GRAY_COLOR
             );
 
             q.pop();
@@ -56,7 +61,7 @@ namespace algos {
                     visited[i] = true;
                     field.select_point(
                         i, graph_id,
-                        {{0.102, 0.601, 0.850, 1}}
+                        BLUE_COLOR
                     );
 
                     // Do some work here
@@ -78,11 +83,32 @@ namespace algos {
     }
 
     // TASK 2
-    void _dfs(Field& field, Graph& graph, const int& graph_id, const int& n, vector<bool>& visited, int from, int parent) {
+    void _dfs(
+        Field& field, Graph& graph, const int& graph_id, const int& n,
+        vector<bool>& visited, int from, int parent,
+        int& steps_counter, int* total_steps = nullptr, int step = -1
+    ) {
+        if(step == steps_counter)
+            return;
+
         visited[from] = true;
+        field.select_point(
+            from, graph_id,
+            GRAY_COLOR
+        );
+        steps_counter++;
+
         for(int i = 0; i < n; i++)
             if(graph.connections[from][i] && !visited[i]){
-                _dfs(field, graph, graph_id, n, visited, i, from);
+                field.select_point(
+                    i, graph_id,
+                    BLUE_COLOR
+                );
+                _dfs(
+                    field, graph, graph_id, n,
+                    visited, i, from,
+                    steps_counter, total_steps, step
+                );
             }
 
         // Do some work here
@@ -92,17 +118,40 @@ namespace algos {
                 graph_id
             );
     }
-    void dfs(Field& field, int graph_id, int start_point = 0) {
+    void dfs(
+        Field& field, int graph_id, int start_point = 0,
+        int* total_steps = nullptr, int step = -1
+    ) {
         Graph& graph = *field.get_graph(graph_id);
         const int n = graph.connections.size();
-        if(n == 0) return;
+        int steps_counter = 0;
+        if(n == 0) {
+            if(total_steps != nullptr)
+                *total_steps = steps_counter;
+            return;
+        }
 
         field.disselect_all_edges();
         field.disselect_all_points();
-        field.select_point(start_point, graph_id);
+        field.select_point(
+            start_point, graph_id,
+            BLUE_COLOR
+        );
+        if(step == steps_counter)
+            return;
 
         vector<bool> visited(n);
-        _dfs(field, graph, graph_id, n, visited, start_point, -1);
+        _dfs(
+            field, graph, graph_id, n,
+            visited, start_point, -1,
+            steps_counter, total_steps, step
+        );
+
+        steps_counter++;
+        if(total_steps != nullptr && *total_steps < steps_counter)
+            *total_steps = steps_counter;
+        if(*total_steps == step || step == -1)
+            field.select_point(start_point, graph_id);
     }
 
     // Task 3
