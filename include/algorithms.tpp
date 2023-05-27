@@ -325,10 +325,18 @@ namespace algos {
     }
 
     // Task 5
-    vector<int> astar_path(Field& field, int graph_id = 0, int from = 0, int to = -1, ostream* log = nullptr) {
+    void astar_path(
+        Field& field, int graph_id = 0, int from = 0, int to = -1, ostream* log = nullptr,
+        int* total_steps = nullptr, int step = -1
+    ) {
         const Graph& graph = *field.get_graph(graph_id);
         const int n = graph.connections.size();
-        if(n == 0) return vector<int>();
+        int steps_counter = 0;
+        if(n == 0) {
+            if(total_steps != nullptr)
+                *total_steps = steps_counter;
+            return;
+        }
         if(to == -1) to = n - 1;
         
         vector<float> distances(n, -1);
@@ -339,35 +347,82 @@ namespace algos {
             return ad > bd; 
         };
         priority_queue<int, vector<int>, decltype(cmp)> q(cmp);
+        int prev = -1;
         distances[from] = 0;
         q.push(from);
+        field.select_point(
+            from, graph_id,
+            BLUE_COLOR
+        );
+        if(step == steps_counter)
+            return;
+
         while(!q.empty()) {
             int buff = q.top();
+            q.pop();
             if(buff == to) break;
+            else if(buff == prev) continue;
+            else prev = buff;
+            
             if(log != nullptr)
                 *log<<"Node: "<<buff<<" (d="<<distances[buff]<<")\n";
-            q.pop();
+            field.select_point(
+                buff, graph_id,
+                GRAY_COLOR
+            );
+
             for(int i = 0; i < n; i++)
                 if(graph.connections[i][buff] && (
                     distances[i] == -1 || 
                     distances[i] > distances[buff] + 
                     field.get_field_distance(graph_id, i, buff))
                 ) {
+                    {
+                        int prev = i;
+                        while(cameFrom[prev] != -1) {
+                            field.disselect_edge(
+                                graph.get_edge_id(prev, cameFrom[prev]));
+                            prev = cameFrom[prev];
+                        }
+                    }
+
                     distances[i] = distances[buff] + 
                         field.get_field_distance(graph_id, i, buff);
                     cameFrom[i] = buff;
                     q.push(i);
+
+                    {
+                        int prev = i;
+                        while(cameFrom[prev] != -1) {
+                            field.select_edge(
+                                graph.get_edge_id(prev, cameFrom[prev]));
+                            prev = cameFrom[prev];
+                        }
+                    }
+                    field.select_point(
+                        i, graph_id,
+                        BLUE_COLOR
+                    );
                 }
+
+            steps_counter++;
+            if(step == steps_counter)
+                return;
         }
 
-        vector<int> ret;
+        steps_counter++;
+        field.disselect_all_edges();
+        field.disselect_all_points();
+        field.select_point(from, graph_id);
+        field.select_point(to, graph_id, GREEN_COLOR);
         int last = to;
-        ret.push_back(to);
         while(last != from) {
+            field.select_edge(
+                graph.get_edge_id(last, cameFrom[last]));
             last = cameFrom[last];
-            ret.push_back(last);
         }
-        return ret;
+        if(total_steps != nullptr)
+            *total_steps = steps_counter;
     }
 
     // Task 6

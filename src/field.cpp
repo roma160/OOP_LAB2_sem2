@@ -433,5 +433,6 @@ void Field::set_show_actual_distance(bool val) { show_actual_distance = val; }
 
 void Field::set_physics_ban(bool is_banned) {
     physics_ban = is_banned;
-    use_ticks = false;
+    if(is_banned)
+        use_ticks = false;
 }

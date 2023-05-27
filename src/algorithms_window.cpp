@@ -44,15 +44,28 @@ struct steps {
     bool show;
     int max;
     int cur;
+    Field& field;
+    bool changed;
 
-    steps() {
+    steps(Field& field): field(field) {
         reset();
     }
 
     void reset() {
         show = false;
+        changed = false;
         max = 0;
         cur = -1;
+        field.set_physics_ban(false);
+    }
+
+    void set_changed() {
+        changed = true;
+    }
+
+    void pop_changed() {
+        if(changed) changed = false;
+        else cur = -1;
     }
 };
 
@@ -60,7 +73,7 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
     ImGui::Begin("Algorithms window", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::SetWindowSize({300, 500}, ImGuiCond_Once);
 
-    static steps steps;
+    static steps steps(field);
 
     static bool execute_requested = false;
     static string graph_data = field.get_graph(0)->to_string();
@@ -171,7 +184,8 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
 
     ImGui::Dummy({0, 10});
     if(incorrect_input) ImGui::TextColored(ImVec4(1, 0, 0, 1), "Incorrect input data!");
-    if(ImGui::Button("Execute") || execute_requested) {
+    if(ImGui::Button("Execute") || execute_requested || steps.changed) {
+        steps.pop_changed();
         execute_requested = false;
 
         incorrect_input = false;
@@ -200,14 +214,8 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
                 Graph& graph = *field.get_graph(0);
                 stringstream log_stream;
                 log_stream<<"The checked nodes:\n";
-                auto res = algos::astar_path(field, 0, from, to, &log_stream);
+                algos::astar_path(field, 0, from, to, &log_stream, &steps.max, steps.cur);
                 log = log_stream.str();
-
-                field.select_point(from, 0, ImColor(1.0f, .0f, .0f, 1.0f));
-                field.select_point(to, 0, ImColor(.0f, 1.0f, .0f, 1.f));
-                for(int i = 1; i < res.size(); i++) {
-                    field.select_edge(graph.get_edge_id(res[i-1], res[i]), 0);
-                }
             }
         }
         else if(item_current_idx == 5) {
@@ -300,18 +308,18 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
         ImGui::Spacing();
         if(ImGui::ArrowButton("##prev_step", ImGuiDir_Left) && steps.cur > 0) {
             steps.cur--;
-            execute_requested = true;
+            steps.set_changed();
         }
 
         ImGui::SameLine();
         ImGui::PushItemWidth(-25);
         if(ImGui::SliderInt("##", &steps.cur, 0, steps.max, "%d"))
-            execute_requested = true;
+            steps.set_changed();
 
         ImGui::SameLine();
         if(ImGui::ArrowButton("##next_step", ImGuiDir_Right) && steps.cur < steps.max) {
             steps.cur++;
-            execute_requested = true;
+            steps.set_changed();
         }
     }
 
