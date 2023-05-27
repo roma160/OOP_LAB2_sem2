@@ -267,8 +267,12 @@ void Field::display_window(){
     static bool debug_field = false;
     ImGui::SetCursorPos(cursor);
     ImGui::Checkbox("FieldN", &debug_field);
+
+    ImGui::BeginDisabled(physics_ban);
     ImGui::SameLine();
     ImGui::Checkbox("Phys", &use_ticks);
+    ImGui::EndDisabled();
+
     ImGui::SameLine();
     {
         string text = bounds.to_string();
@@ -426,3 +430,8 @@ float Field::get_field_distance(int graph_id, int from_id, int to_id)
 }
 
 void Field::set_show_actual_distance(bool val) { show_actual_distance = val; }
+
+void Field::set_physics_ban(bool is_banned) {
+    physics_ban = is_banned;
+    use_ticks = false;
+}

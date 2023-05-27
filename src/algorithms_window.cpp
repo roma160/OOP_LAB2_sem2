@@ -273,7 +273,9 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
 
     ImGui::SameLine();
     ImGui::BeginDisabled(steps.max <= 0);
-    ImGui::Checkbox("Show steps", &steps.show);
+    if(ImGui::Checkbox("Show steps", &steps.show)) {
+        field.set_physics_ban(steps.show);
+    }
     ImGui::EndDisabled();
 
     switch (item_current_idx)

@@ -55,6 +55,7 @@ public:
     enum ForceType { Node, ConnectedNode, UpBound, DownBound, LeftBound, RightBound };
 
 private:
+    bool physics_ban = false;
     bool use_ticks = true;
     bool show_node_ids = true;
     bool show_edge_weights = true;
@@ -108,4 +109,6 @@ public:
     float get_field_distance(int graph_id, int from_id, int to_id);
 
     void set_show_actual_distance(bool val);
+
+    void set_physics_ban(bool is_banned);
 };
