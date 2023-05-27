@@ -46,6 +46,7 @@ struct steps {
     int cur;
     Field& field;
     bool changed;
+    bool disabled;
 
     steps(Field& field): field(field) {
         reset();
@@ -176,6 +177,7 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
     if(item_current_idx != item_prev_idx) {
         steps.reset();
         item_prev_idx = item_current_idx;
+        steps.disabled = item_current_idx > 4;
     }
 
     // Algortithm control
@@ -280,7 +282,7 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
     }
 
     ImGui::SameLine();
-    ImGui::BeginDisabled(steps.max <= 0);
+    ImGui::BeginDisabled(steps.max <= 0 || steps.disabled);
     if(ImGui::Checkbox("Show steps", &steps.show)) {
         field.set_physics_ban(steps.show);
     }
