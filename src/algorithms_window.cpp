@@ -184,14 +184,7 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
             algos::dfs(field, 0, 0, &steps.max, steps.cur);
         }
         else if(item_current_idx == 2) {
-            const int start_point = 0;
-            Graph& graph = *field.get_graph(0);
-            auto res = algos::prims_min_tree(graph, start_point);
-
-            field.select_point(start_point, 0);
-            for(auto edge : res.edges) {
-                field.select_edge(graph.get_edge_id(edge.first, edge.second), 0);
-            }
+            algos::prims_min_tree(field, 0, 0, &steps.max, steps.cur);
         }
         else if(item_current_idx == 3) {
             int from = -1, to = -1;

@@ -157,23 +157,47 @@ namespace algos {
     // Task 3
     bool _pairs_descending(pair<int, int> a, pair<int, int> b)
     { return a.first > b.first; }
-    Graph prims_min_tree(Graph& graph, int start_point = 0) {
+    void prims_min_tree(
+        Field& field, int graph_id, int start_point = 0,
+        int* total_steps = nullptr, int step = -1
+    ) {
+        Graph& graph = *field.get_graph(graph_id);
         const int n = graph.connections.size();
-        if(n == 0) return Graph();
+        int steps_counter = 0;
+        if(n == 0) {
+            if(total_steps != nullptr)
+                *total_steps = steps_counter;
+            return;
+        }
 
-        Graph ret(n);
         vector<bool> visited(n);
         stack<pair<int, int>> q;
         q.push({-1, start_point});
+        field.select_point(
+            start_point, graph_id,
+            BLUE_COLOR
+        );
+        if(step == steps_counter)
+            return;
+
         while (!q.empty())
         {
             auto buff = q.top();
+            field.select_point(
+                buff.second, graph_id,
+                GRAY_COLOR
+            );
+
             q.pop();
             int from = buff.first;
             int to = buff.second;
             if(visited[to]) continue;
             visited[to] = true;
-            if(from != -1) ret.add_edge(from, to);
+            if(from != -1)
+                field.select_edge(
+                    graph.get_edge_id(from, to),
+                    graph_id
+                );
 
             vector<pair<int, int>> possible;
             for(int i = 0; i < n; i++)
@@ -181,10 +205,23 @@ namespace algos {
                     possible.push_back({graph.connections[to][i].weight, i});
                 }
             sort(possible.begin(), possible.end(), _pairs_descending);
-            for(auto p : possible) q.push({to, p.second});
+            for(auto p : possible) {
+                q.push({to, p.second});
+                field.select_point(
+                    p.second, graph_id,
+                    BLUE_COLOR
+                );
+            }
+
+            steps_counter++;
+            if(step == steps_counter)
+                return;
         }
 
-        return ret;
+        steps_counter++;
+        field.select_point(start_point, graph_id);
+        if(total_steps != nullptr)
+            *total_steps = steps_counter;
     }
 
     // Task 4
