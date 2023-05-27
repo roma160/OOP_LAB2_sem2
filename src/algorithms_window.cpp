@@ -50,7 +50,7 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
 
                 Graph& cur_graph = *field.get_graph(0);
                 if(cur_graph.includes(buff) || (buff.includes(cur_graph) && 
-                    buff.connections.size() <= cur_graph.connections.size())
+                    buff.connections.size() == cur_graph.connections.size())
                 ) {
                     for(int i = cur_graph.edges.size() - 1; i >= 0; i--)
                         cur_graph.remove_edge(i);
