@@ -15,6 +15,7 @@ namespace algos {
     namespace {
         ImColor GRAY_COLOR = {{0.41, 0.41, 0.41, 1}};
         ImColor BLUE_COLOR = {{0.102, 0.601, 0.850, 1}};
+        ImColor GREEN_COLOR = {{0.0279, 0.930, 0.118, 1}};
     }
 
     // TASK 1
@@ -225,9 +226,18 @@ namespace algos {
     }
 
     // Task 4
-    vector<int> dijkstra_path(Graph& graph, int from = 0, int to = -1) {
+    void dijkstra_path(
+        Field& field, int graph_id, int from = 0, int to = -1,
+        int* total_steps = nullptr, int step = -1
+    ) {
+        Graph& graph = *field.get_graph(graph_id);
         const int n = graph.connections.size();
-        if(n == 0) return vector<int>();
+        int steps_counter = 0;
+        if(n == 0) {
+            if(total_steps != nullptr)
+                *total_steps = steps_counter;
+            return;
+        }
         if(to == -1) to = n - 1;
 
         struct segment {
@@ -239,26 +249,79 @@ namespace algos {
         };
         vector<segment> distances(n);
         queue<int> q;
+        int prev = -1;
         q.push(from);
         distances[from] = {{from}, 0};
+        field.select_point(
+            from, graph_id,
+            BLUE_COLOR
+        );
+        if(step == steps_counter)
+            return;
+
         while(!q.empty()) {
             int buff = q.front();
             q.pop();
+            if(prev == buff) continue;
+            else prev = buff;
+
+            field.select_point(
+                buff, graph_id,
+                GRAY_COLOR
+            );
+            
             for(int i = 0; i < n; i++)
                 if(graph.connections[i][buff] && (
                     distances[i].length == -1 || 
                     distances[i].length > distances[buff].length + 
                     graph.connections[i][buff].weight)
                 ) {
+                    {
+                        int j = 1;
+                        while(
+                            j < distances[i].path.size() && j < distances[buff].path.size() &&
+                            distances[i].path[j] == distances[buff].path[j]
+                        ) j++;
+                        for(int k = j; k < distances[i].path.size(); k++)
+                            field.disselect_edge(
+                                graph.get_edge_id(
+                                    distances[i].path[k-1],
+                                    distances[i].path[k]
+                                )
+                            );
+                        field.select_edge(graph.get_edge_id(
+                            distances[buff].path[distances[buff].path.size()-1], i));
+                    }
+
                     distances[i].length = distances[buff].length + 
                         graph.connections[i][buff].weight;
                     distances[i].path = distances[buff].path;
                     distances[i].path.push_back(i);
                     q.push(i);
+
+                    field.select_point(
+                        i, graph_id,
+                        BLUE_COLOR
+                    );
                 }
+            
+            steps_counter++;
+            if(step == steps_counter)
+                return;
         }
 
-        return distances[to].path;
+        steps_counter++;
+        field.select_point(from, graph_id);
+        field.select_point(to, graph_id, GREEN_COLOR);
+        field.disselect_all_edges();
+        for(int i = 1; i < distances[to].path.size(); i++) {
+            field.select_edge(graph.get_edge_id(
+                distances[to].path[i-1],
+                distances[to].path[i]
+            ), 0);
+        }
+        if(total_steps != nullptr)
+            *total_steps = steps_counter;
     }
 
     // Task 5

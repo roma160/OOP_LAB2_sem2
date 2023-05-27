@@ -190,16 +190,7 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
             int from = -1, to = -1;
             if(!get_int(from_node_str, from) || !get_int(to_node_str, to))
                 incorrect_input = true;
-            else {
-                Graph& graph = *field.get_graph(0);
-                auto res = algos::dijkstra_path(graph, from, to);
-
-                field.select_point(from, 0, ImColor(1.0f, .0f, .0f, 1.0f));
-                field.select_point(to, 0, ImColor(.0f, 1.0f, .0f, 1.f));
-                for(int i = 1; i < res.size(); i++) {
-                    field.select_edge(graph.get_edge_id(res[i-1], res[i]), 0);
-                }
-            }
+            else algos::dijkstra_path(field, 0, from, to, &steps.max, steps.cur);
         }
         else if(item_current_idx == 4) {
             int from = -1, to = -1;
