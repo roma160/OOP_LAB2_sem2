@@ -33,9 +33,34 @@ bool get_int(const string& str, int& ret) {
     return true;
 }
 
+
+void reset_field(Field& field) {
+    field.disselect_all_edges();
+    field.disselect_all_points();
+    field.get_graph(0)->clear_annotations();
+}
+
+struct steps {
+    bool show;
+    int max;
+    int cur;
+
+    steps() {
+        reset();
+    }
+
+    void reset() {
+        show = false;
+        max = 0;
+        cur = -1;
+    }
+};
+
 void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
     ImGui::Begin("Algorithms window", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::SetWindowSize({300, 500}, ImGuiCond_Once);
+
+    static steps steps;
 
     static bool execute_requested = false;
     static string graph_data = field.get_graph(0)->to_string();
@@ -65,6 +90,9 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
                     field.remove_graph(0);
                     field.add_graph(buff);
                 }
+
+                reset_field(field);
+                steps.reset();
             }
         }
 
@@ -106,6 +134,7 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
         "8. Bidirect A* min path",
     };
     static int item_current_idx = algorithms.size() - 1;
+    static int item_prev_idx = -1;
     if (ImGui::BeginCombo("Algorithm", algorithms[item_current_idx].c_str()))
     {
         for (int n = 0; n < algorithms.size(); n++)
@@ -131,6 +160,10 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
         }
         ImGui::EndCombo();
     }
+    if(item_current_idx != item_prev_idx) {
+        steps.reset();
+        item_prev_idx = item_current_idx;
+    }
 
     // Algortithm control
     static string from_node_str = to_string(1);
@@ -142,12 +175,10 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
         execute_requested = false;
 
         incorrect_input = false;
-        field.disselect_all_edges();
-        field.disselect_all_points();
-        field.get_graph(0)->clear_annotations();
+        reset_field(field);
 
         if(item_current_idx == 0) {
-            algos::bfs(field, 0, 0);
+            algos::bfs(field, 0, 0, &steps.max, steps.cur);
         }
         else if(item_current_idx == 1) {
             algos::dfs(field, 0, 0);
@@ -250,7 +281,17 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
                     sparseGraphView.set_node_selection(node, true);
             }
         }
+
+        if(steps.cur < 0) {
+            steps.cur = steps.max;
+        }
     }
+
+    ImGui::SameLine();
+    ImGui::BeginDisabled(steps.max <= 0);
+    ImGui::Checkbox("Show steps", &steps.show);
+    ImGui::EndDisabled();
+
     switch (item_current_idx)
     {
     case 3:
@@ -267,6 +308,25 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
             ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_EnterReturnsTrue))
         { execute_requested = true; }
         break;
+    }
+
+    if(steps.show) {
+        ImGui::Spacing();
+        if(ImGui::ArrowButton("##prev_step", ImGuiDir_Left) && steps.cur > 0) {
+            steps.cur--;
+            execute_requested = true;
+        }
+
+        ImGui::SameLine();
+        ImGui::PushItemWidth(-25);
+        if(ImGui::SliderInt("##", &steps.cur, 0, steps.max, "%d"))
+            execute_requested = true;
+
+        ImGui::SameLine();
+        if(ImGui::ArrowButton("##next_step", ImGuiDir_Right) && steps.cur < steps.max) {
+            steps.cur++;
+            execute_requested = true;
+        }
     }
 
     if(!log.empty()){

@@ -13,10 +13,18 @@ using namespace std;
 
 namespace algos {
     // TASK 1
-    void bfs(Field& field, int graph_id, int start_point = 0) {
+    void bfs(
+        Field& field, int graph_id, int start_point = 0,
+        int* total_steps = nullptr, int step = -1
+    ) {
         Graph& graph = *field.get_graph(graph_id);
         const int n = graph.connections.size();
-        if(n == 0) return;
+        int steps_counter = 0;
+        if(n == 0) {
+            if(total_steps != nullptr)
+                *total_steps = steps_counter;
+            return;
+        }
 
         field.disselect_all_edges();
         field.disselect_all_points();
@@ -26,14 +34,30 @@ namespace algos {
         queue<int> q;
         q.push(start_point);
         visited[start_point] = true;
+        field.select_point(
+            start_point, graph_id,
+            {{0.102, 0.601, 0.850, 1}}
+        );
+        if(step == steps_counter)
+            return;
+
         while (!q.empty())
         {
             int buff = q.front();
+            field.select_point(
+                buff, graph_id,
+                {{0.41, 0.41, 0.41, 1}}
+            );
+
             q.pop();
             for(int i = 0; i < n; i++)
                 if(graph.connections[buff][i] && !visited[i]){
                     q.push(i);
                     visited[i] = true;
+                    field.select_point(
+                        i, graph_id,
+                        {{0.102, 0.601, 0.850, 1}}
+                    );
 
                     // Do some work here
                     field.select_edge(
@@ -41,7 +65,16 @@ namespace algos {
                         graph_id
                     );
                 }
+
+            steps_counter++;
+            if(step == steps_counter)
+                return;
         }
+
+        steps_counter++;
+        field.select_point(start_point, graph_id);
+        if(total_steps != nullptr)
+            *total_steps = steps_counter;
     }
 
     // TASK 2
