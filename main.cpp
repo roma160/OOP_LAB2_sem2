@@ -32,7 +32,7 @@ using namespace std;
 static std::function<void()>            MainLoopForEmscriptenP;
 static void MainLoopForEmscripten()     { MainLoopForEmscriptenP(); }
 #define EMSCRIPTEN_MAINLOOP_BEGIN       MainLoopForEmscriptenP = [&]()
-#define EMSCRIPTEN_MAINLOOP_END         ; emscripten_set_main_loop(MainLoopForEmscripten, 0, true)
+#define EMSCRIPTEN_MAINLOOP_END         ; emscripten_set_main_loop(MainLoopForEmscripten, 0, false)
 #else
 #define EMSCRIPTEN_MAINLOOP_BEGIN
 #define EMSCRIPTEN_MAINLOOP_END
@@ -108,6 +108,7 @@ int main(int, char **)
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, {1, 1, 1, 1});
     //ImGui::StyleColorsLight();
 
     // Setup Platform/Renderer backends
@@ -147,6 +148,10 @@ int main(int, char **)
     double dt = 0;
 
     // Main loop
+#ifdef __EMSCRIPTEN__
+    emscripten_log(EM_LOG_CONSOLE, "The main loop definition begin!");
+#endif
+
     bool done = false;
 #ifdef __EMSCRIPTEN__
     // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
@@ -202,8 +207,7 @@ int main(int, char **)
     }
 #ifdef __EMSCRIPTEN__
     EMSCRIPTEN_MAINLOOP_END;
-#endif
-
+#else
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
@@ -212,6 +216,7 @@ int main(int, char **)
     SDL_GL_DeleteContext(gl_context);
     SDL_DestroyWindow(window);
     SDL_Quit();
+#endif
 
     return 0;
 }

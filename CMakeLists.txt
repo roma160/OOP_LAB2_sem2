@@ -128,7 +128,10 @@ add_custom_target(copy_graph_data
 add_dependencies(main copy_graph_data)
 
 if(EMSCRIPTEN)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os -sASYNCIFY -sASSERTIONS -sABORTING_MALLOC=0")
+    # set(CXXFLAGS "${CXXFLAGS} -sASYNCIFY -sASSERTIONS")
+    target_compile_options(main PRIVATE -Wno-error=unused-command-line-argument)
+    # target_compile_features(main PRIVATE ASYNCIFY ASSERTIONS)
 
     set(
         JS_RESULT
