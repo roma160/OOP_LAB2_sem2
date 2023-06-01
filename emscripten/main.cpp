@@ -107,8 +107,6 @@ int main(int, char **)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, {1, 1, 1, 1});
     //ImGui::StyleColorsLight();
 
     // Setup Platform/Renderer backends
@@ -133,7 +131,7 @@ int main(int, char **)
     //IM_ASSERT(font != nullptr);
 
     // Our state
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, .00f);
 
     // GRAPH DATA
     Field field(200);
