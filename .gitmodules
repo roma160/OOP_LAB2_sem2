@@ -1,7 +1,7 @@
 [submodule "libs/imgui"]
-	path = libs/imgui
+	path = emscripten/libs/imgui
 	url = https://github.com/ocornut/imgui
 [submodule "libs/SDL"]
-	path = libs/SDL
+	path = emscripten/libs/SDL
 	url = https://github.com/libsdl-org/SDL.git
 	branch = SDL2

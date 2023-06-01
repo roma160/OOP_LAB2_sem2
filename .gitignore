@@ -1,6 +1,6 @@
 /.vs
 /.vscode
-/out
-/build
+/emscripten/out
+/emscripten/build
 /imgui.ini
-/tests
+/emscripten/tests
