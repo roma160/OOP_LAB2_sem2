@@ -24,7 +24,7 @@ The steps for the build are:
 emcmake cmake -S . -B ./build/emscripten_build
 
 # Build the main target
-cmake --build ./build/emscripten --target main
+cmake --build ./build/emscripten_build --target main
 ```
 3. If there are no errors, this must be the thing. Now you could serve a Python server from a `docs` folder:
 ```console

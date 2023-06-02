@@ -70,7 +70,7 @@ struct steps {
     }
 };
 
-void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
+void display_algorithms_window(Field& field, SparseGraphView* sparseGraphView) {
     ImGui::Begin("Algorithms window", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::SetWindowSize({300, 500}, ImGuiCond_Once);
 
@@ -110,11 +110,13 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
             }
         }
 
-        ImGui::SameLine();
-        if (ImGui::Button("Load headless")) {
-            string graph_data = read_file("sparse_graph_data.txt");
-            if(sparseGraphView.load_graph(graph_data)) {
-                graph_description = sparseGraphView.graph.to_info_string();
+        if (sparseGraphView != nullptr) {
+            ImGui::SameLine();
+            if (ImGui::Button("Load headless")) {
+                string graph_data = read_file("sparse_graph_data.txt");
+                if(sparseGraphView->load_graph(graph_data)) {
+                    graph_description = sparseGraphView->graph.to_info_string();
+                }
             }
         }
 
@@ -133,7 +135,8 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
         field.disselect_all_points();
         field.get_graph(0)->clear_annotations();
 
-        sparseGraphView.clear_selection();
+        if(sparseGraphView != nullptr)
+            sparseGraphView->clear_selection();
     }
 
     static bool incorrect_input = false;
@@ -245,19 +248,22 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
                 }
             }
         }
+        else if(sparseGraphView == nullptr) { 
+            // empty case to not use the null variable
+        }
         else if(item_current_idx == 6) {
             int from = -1, to = -1;
             if(!get_int(from_node_str, from) || !get_int(to_node_str, to))
                 incorrect_input = true;
             else {
                 stringstream ss;
-                auto res = algos::bidirect_dijkstra_path(sparseGraphView.graph, from, to, &ss);
+                auto res = algos::bidirect_dijkstra_path(sparseGraphView->graph, from, to, &ss);
                 log = ss.str();
 
-                sparseGraphView.clear_selection();
-                sparseGraphView.set_current_path(res.path);
+                sparseGraphView->clear_selection();
+                sparseGraphView->set_current_path(res.path);
                 for(int node : res.checked_nodes)
-                    sparseGraphView.set_node_selection(node, true);
+                    sparseGraphView->set_node_selection(node, true);
             }
         }
         else if(item_current_idx == 7) {
@@ -266,13 +272,13 @@ void display_algorithms_window(Field& field, SparseGraphView& sparseGraphView) {
                 incorrect_input = true;
             else {
                 stringstream ss;
-                auto res = algos::bidirect_astar_path(sparseGraphView, from, to, &ss);
+                auto res = algos::bidirect_astar_path(*sparseGraphView, from, to, &ss);
                 log = ss.str();
 
-                sparseGraphView.clear_selection();
-                sparseGraphView.set_current_path(res.path);
+                sparseGraphView->clear_selection();
+                sparseGraphView->set_current_path(res.path);
                 for(int node : res.checked_nodes)
-                    sparseGraphView.set_node_selection(node, true);
+                    sparseGraphView->set_node_selection(node, true);
             }
         }
 

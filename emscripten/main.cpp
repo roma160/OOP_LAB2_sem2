@@ -1,7 +1,6 @@
-// Dear ImGui: standalone example application for SDL2 + OpenGL
-// (SDL is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
-// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
-// Read online: https://github.com/ocornut/imgui/tree/master/docs
+#ifdef __EMSCRIPTEN__
+#define EMSCRIPTEN_CODE
+#endif
 
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -18,9 +17,12 @@
 
 #include "utils.tpp"
 #include "field.h"
-#include "control_window.h"
 #include "algorithms_window.h"
+
+#ifndef EMSCRIPTEN_CODE
 #include "sparse_graph_view.h"
+#include "control_window.h"
+#endif
 
 using namespace std;
 
@@ -32,7 +34,7 @@ using namespace std;
 static std::function<void()>            MainLoopForEmscriptenP;
 static void MainLoopForEmscripten()     { MainLoopForEmscriptenP(); }
 #define EMSCRIPTEN_MAINLOOP_BEGIN       MainLoopForEmscriptenP = [&]()
-#define EMSCRIPTEN_MAINLOOP_END         ; emscripten_set_main_loop(MainLoopForEmscripten, 0, false)
+#define EMSCRIPTEN_MAINLOOP_END         ; emscripten_set_main_loop(MainLoopForEmscripten, 0, true)
 #else
 #define EMSCRIPTEN_MAINLOOP_BEGIN
 #define EMSCRIPTEN_MAINLOOP_END
@@ -53,6 +55,15 @@ static void MainLoopForEmscripten()     { MainLoopForEmscriptenP(); }
 // Main code
 int main(int, char **)
 {
+    // Disabling keyboards events for browser
+    // https://github.com/emscripten-core/emscripten/issues/3621
+    // https://github.com/emscripten-ports/SDL2/pull/10#issuecomment-87466380
+    // SDL_EventState(SDL_TEXTINPUT, SDL_DISABLE);
+    // SDL_EventState(SDL_KEYDOWN, SDL_DISABLE);
+    // SDL_EventState(SDL_KEYUP, SDL_DISABLE);
+
+	// ImGui
+
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
     {
@@ -103,35 +114,32 @@ int main(int, char **)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-    // Setup Dear ImGui style
-    //ImGui::StyleColorsLight();
+	// https://github.com/emscripten-ports/SDL2/issues/128
+	SDL_SetEventFilter([](void* userdata, SDL_Event *event){
+		// Filtering the keyboard events, and handling one only
+		// when a text input is active
+		const ImGuiIO* io = static_cast<ImGuiIO*>(userdata);
+		switch(event->type) {
+			case SDL_KEYDOWN:
+			case SDL_KEYUP:
+				return 0;
+			case SDL_TEXTINPUT:
+				if(!io->WantTextInput)
+					return 0;
+		}
+		return 1;
+	}, &io);
 
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return a nullptr. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use Freetype for higher quality font rendering.
-    // - Read 'docs/FONTS.md' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    // - Our Emscripten build process allows embedding fonts to be accessible at runtime from the "fonts/" folder. See Makefile.emscripten for details.
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
-    //IM_ASSERT(font != nullptr);
-
     // Our state
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, .00f);
+    #ifndef EMSCRIPTEN_CODE
+    const ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, .00f);
+    #else
+    const ImVec4 clear_color = ImVec4(1.f, 1.f, 1.f, 1.f);
+    #endif
 
     // GRAPH DATA
     Field field(200);
@@ -139,8 +147,10 @@ int main(int, char **)
         {6, vector<Graph::Connection>(6, true)}
     ));
 
+    #ifndef EMSCRIPTEN_CODE
     SparseGraphView sparseGraphView;
     //sparseGraphView.load_graph(read_file("sparse_graph_data.txt"));
+    #endif
 
     double start_time = time();
     double dt = 0;
@@ -168,6 +178,14 @@ int main(int, char **)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
+			// Do not handle keyboard events when it is not needed.
+			// switch(event.type) {
+			// 	case SDL_KEYDOWN:
+			// 	case SDL_KEYUP:
+			// 	case SDL_TEXTINPUT:
+			// 		if(!io.WantTextInput)
+			// 			continue;
+			// }
             ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT)
                 done = true;
@@ -183,7 +201,11 @@ int main(int, char **)
         start_time = time();
 
         // Main window rendering pipeline
+
+        // https://stackoverflow.com/questions/2249282/c-c-portable-way-to-detect-debug-release
+        #ifdef _DEBUG
         ImGui::ShowDemoWindow();
+        #endif
 
         dt = time() - start_time;
         // But the actual dt could also be used
@@ -192,8 +214,12 @@ int main(int, char **)
         field.display_window();
 
         //display_control_window(field);
+        #ifndef EMSCRIPTEN_CODE
         sparseGraphView.show_window();
-        display_algorithms_window(field, sparseGraphView);
+        display_algorithms_window(field, &sparseGraphView);
+        #else
+        display_algorithms_window(field);
+        #endif
 
         // Rendering
         ImGui::Render();

@@ -266,33 +266,44 @@ void Field::display_window(){
 
     static bool debug_field = false;
     ImGui::SetCursorPos(cursor);
-    ImGui::Checkbox("FieldN", &debug_field);
 
-    ImGui::BeginDisabled(physics_ban);
-    ImGui::SameLine();
-    ImGui::Checkbox("Phys", &use_ticks);
-    ImGui::EndDisabled();
+    if(show_options) {
+        ImGui::Checkbox("FieldN", &debug_field);
 
-    ImGui::SameLine();
-    {
-        string text = bounds.to_string();
-        ImGui::Text("Size: %s", text.c_str());
+        ImGui::BeginDisabled(physics_ban);
+        ImGui::SameLine();
+        ImGui::Checkbox("Phys", &use_ticks);
+        ImGui::EndDisabled();
+
+        ImGui::SameLine();
+        {
+            string text = bounds.to_string();
+            ImGui::Text("Size: %s", text.c_str());
+        }
+        ImGui::SameLine();
+        ImGui::Checkbox("Bounds", &bound_forces);
     }
-    ImGui::SameLine();
-    ImGui::Checkbox("Bounds", &bound_forces);
+    else {
+        ImGui::Checkbox("show_options", &show_options);
+    }
+
     ImGui::SameLine();
     if(ImGui::Button("Reset pos")) {
         for(int i = 0; i < graphs.size(); i++)
             reset_points_pos(i);
     }
 
-    ImGui::Checkbox("node_i", &show_node_ids);
-    ImGui::SameLine();
-    ImGui::Checkbox("edge_w", &show_edge_weights);
-    ImGui::SameLine();
-    ImGui::Checkbox("only_sel", &show_only_selected_edges);
-    ImGui::SameLine();
-    ImGui::Checkbox("real_dist", &show_actual_distance);
+    if(show_options) {
+        ImGui::Checkbox("node_i", &show_node_ids);
+        ImGui::SameLine();
+        ImGui::Checkbox("edge_w", &show_edge_weights);
+        ImGui::SameLine();
+        ImGui::Checkbox("only_sel", &show_only_selected_edges);
+        ImGui::SameLine();
+        ImGui::Checkbox("real_dist", &show_actual_distance);
+        ImGui::SameLine();
+        ImGui::Checkbox("show_options", &show_options);
+    }
 
     const ImU32 node_color = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
     const ImU32 edge_color = ImColor(.5f, .5f, .5f, 1.0f);

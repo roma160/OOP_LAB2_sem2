@@ -55,6 +55,7 @@ public:
     enum ForceType { Node, ConnectedNode, UpBound, DownBound, LeftBound, RightBound };
 
 private:
+    bool show_options = true;
     bool physics_ban = false;
     bool use_ticks = true;
     bool show_node_ids = true;

@@ -61,7 +61,7 @@ if(EMSCRIPTEN)
     # compiler and linker. The *_INIT variables are available since CMake 3.7, so
     # it won't work in earlier versions. Sorry.
     cmake_minimum_required(VERSION 3.7)
-    set(USE_FLAGS "-s USE_SDL=2 -s USE_FREETYPE=1")
+    set(USE_FLAGS "-sASSERTIONS=1 -sWASM=1 -sASYNCIFY -sUSE_SDL=2 -sUSE_FREETYPE=1")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${USE_FLAGS}")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${USE_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS}")
@@ -83,19 +83,27 @@ add_subdirectory(${SDL_DIR})
 
 set(IMGUI_DIR ${LIBS_DIR}/imgui)
 add_library(IMGUI STATIC)
+set(IMGUI_PUBLIC_SOURCES
+    "${IMGUI_DIR}/imgui_draw.cpp"
+    "${IMGUI_DIR}/imgui_widgets.cpp"
+    "${IMGUI_DIR}/imgui_tables.cpp"
+    "${IMGUI_DIR}/imgui.cpp"
+    "${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp"
+)
+
+if (CMAKE_BUILD_TYPE STREQUAL "DEBUG" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(IMGUI_PUBLIC_SOURCES
+        "${IMGUI_PUBLIC_SOURCES}"
+        "${IMGUI_DIR}/imgui_demo.cpp"
+    )
+endif()
+message("IMGUI_PUBLIC_SOURCES ${IMGUI_PUBLIC_SOURCES}")
 
 target_sources(IMGUI
-PUBLIC
-    ${IMGUI_DIR}/imgui_demo.cpp
-    ${IMGUI_DIR}/imgui_draw.cpp
-    ${IMGUI_DIR}/imgui_tables.cpp
-    ${IMGUI_DIR}/imgui_widgets.cpp
-    ${IMGUI_DIR}/imgui.cpp
-    ${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp
-
+PUBLIC ${IMGUI_PUBLIC_SOURCES}
 PRIVATE
-    ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
-    ${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp
+    "${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp"
+    "${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp"
 )
 
 target_include_directories(IMGUI
@@ -115,7 +123,9 @@ set(SRC_FOLDER "${CMAKE_SOURCE_DIR}/src")
 set(INCLUDE_FOLDER "${CMAKE_SOURCE_DIR}/include")
 file(GLOB_RECURSE "SOURCES" "${SRC_FOLDER}/**.cpp")
 
+# add_compile_definitions("_DEBUG=$<CONFIG:Debug>")
 add_executable(main WIN32 "${CMAKE_SOURCE_DIR}/main.cpp" "${SOURCES}")
+# set_target_properties(main PROPERTIES LINK_FLAGS ${USE_FLAGS})
 target_include_directories(main PRIVATE "${INCLUDE_FOLDER}")
 target_link_libraries(main PRIVATE IMGUI)
 
@@ -139,7 +149,7 @@ if(EMSCRIPTEN)
         "${CMAKE_BINARY_DIR}/main.wasm"
     )
     foreach(F IN LISTS JS_RESULT)
-    set(INDEX_DIR "${CMAKE_SOURCE_DIR}/docs")
+    set(INDEX_DIR "${CMAKE_SOURCE_DIR}/../svelte/src/lib")
     add_custom_command(
         TARGET main POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${F} ${INDEX_DIR}
