@@ -62,6 +62,9 @@ private:
     bool show_edge_weights = true;
     bool show_only_selected_edges = false;
     bool show_actual_distance = false;
+
+    string debug_message;
+
     bool bound_forces = true;
     float scale = 1.0f;
 
@@ -112,4 +115,9 @@ public:
     void set_show_actual_distance(bool val);
 
     void set_physics_ban(bool is_banned);
+
+    #ifdef _DEBUG
+    void set_debug_message(string message);
+    void hide_debug_message();
+    #endif
 };

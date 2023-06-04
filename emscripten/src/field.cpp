@@ -4,6 +4,7 @@
 
 #include "field.h"
 #include "utils.tpp"
+#include "main.h"
 
 #include <math.h>
 #include <iostream>
@@ -206,9 +207,25 @@ void Field::display_window(){
     static FGraphLink selected = {-1, 0};
 
     const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+
+    #ifdef EMSCRIPTEN_CODE
+    const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | FIXED_WINDOW_FLAGS;
+    ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y));
+    #else
+    const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
     ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 20, main_viewport->WorkPos.y + 20), ImGuiCond_Once);
-    ImGui::Begin("Field", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+    #endif
+
+    ImGui::Begin("Field", nullptr, window_flags);
+
+    #ifdef EMSCRIPTEN_CODE
+    ImGui::SetWindowSize({
+        main_viewport->Size.x - FIXED_ALGORITHM_WINDOW_WIDTH,
+        main_viewport->Size.y
+    });
+    #else
     ImGui::SetWindowSize(bounds, ImGuiCond_Once);
+    #endif
     bounds = ImGui::GetWindowSize();
 
     const Vec2 const_p = ImGui::GetCursorScreenPos();
@@ -267,6 +284,7 @@ void Field::display_window(){
     static bool debug_field = false;
     ImGui::SetCursorPos(cursor);
 
+    // User controls
     if(show_options) {
         ImGui::Checkbox("FieldN", &debug_field);
 
@@ -305,9 +323,25 @@ void Field::display_window(){
         ImGui::Checkbox("show_options", &show_options);
     }
 
-    const ImU32 node_color = ImColor(1.0f, 1.0f, 0.4f, 1.0f);
-    const ImU32 edge_color = ImColor(.5f, .5f, .5f, 1.0f);
+    // Debug message
+    if(!debug_message.empty()) {
+        const auto message_size = ImGui::CalcTextSize(debug_message.c_str());
+        ImGui::SetCursorPos({10, bounds.y - message_size.y});
+        ImGui::Text(debug_message.c_str());
+    }
+
+    // Actual graph drawing
+    const ImU32 node_color = ImGui::ColorConvertFloat4ToU32(
+        ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram));
+    const ImU32 edge_color = ImGui::ColorConvertFloat4ToU32(
+        ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    const ImU32 text_color = ImGui::ColorConvertFloat4ToU32(
+        ImGui::GetStyleColorVec4(ImGuiCol_Text));
+    const ImU32 text_bg_color = ImGui::ColorConvertFloat4ToU32(
+        ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
     const ImU32 green_col = ImColor(0.0f, 1.0f, 0.1f, 1.0f);
+    const ImU32 blue_col = ImColor(0.0f, 0.0f, 1.0f, 1.0f);
+
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
     for(int g = 0; g < graphs.size(); g++){
         const auto& graph = graphs[g];
@@ -333,17 +367,17 @@ void Field::display_window(){
                 
                 const auto calc_size = ImGui::CalcTextSize(num.c_str());
                 const auto text_p1 = (a + b) / 2 - (Vec2) calc_size / 2;
-                draw_list->AddRectFilled(text_p1, text_p1 + calc_size, edge_color);
+                draw_list->AddRectFilled(text_p1, text_p1 + calc_size, text_bg_color);
                 draw_list->AddText(text_p1,
-                    ImColor(0, 0, 0), num.c_str()
+                    text_color, num.c_str()
                 );
 
                 if(!graph.edges_anno[i].empty()) { 
                     const auto anno_size = ImGui::CalcTextSize(graph.edges_anno[i].c_str());
                     const auto anno_p1 = (a + b) / 2  - (Vec2) anno_size / 2 + Vec2{0, calc_size.y};
-                    draw_list->AddRectFilled(anno_p1, anno_p1 + anno_size, edge_color);
+                    draw_list->AddRectFilled(anno_p1, anno_p1 + anno_size, text_bg_color);
                     draw_list->AddText(anno_p1,
-                        ImColor(0, 0, 0), graph.edges_anno[i].c_str()
+                        text_color, graph.edges_anno[i].c_str()
                     );
                 }
             }
@@ -363,7 +397,7 @@ void Field::display_window(){
                 string num = to_string(i);
                 draw_list->AddText(
                     p + point - (Vec2) ImGui::CalcTextSize(num.c_str()) / 2,
-                    ImColor(0, 0, 255), num.c_str()
+                    blue_col, num.c_str()
                 );
             }
         }
@@ -446,4 +480,12 @@ void Field::set_physics_ban(bool is_banned) {
     physics_ban = is_banned;
     if(is_banned)
         use_ticks = false;
+}
+
+void Field::set_debug_message(string message) {
+    debug_message = message;
+}
+
+void Field::hide_debug_message() {
+    debug_message = "";
 }

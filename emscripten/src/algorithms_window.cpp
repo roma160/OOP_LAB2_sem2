@@ -6,6 +6,7 @@
 #include "algorithms.tpp"
 #include "vec2.h"
 #include "utils.tpp"
+#include "main.h"
 
 #include <vector>
 #include <string>
@@ -71,8 +72,28 @@ struct steps {
 };
 
 void display_algorithms_window(Field& field, SparseGraphView* sparseGraphView) {
-    ImGui::Begin("Algorithms window", nullptr, ImGuiWindowFlags_NoCollapse);
+    const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+
+    #ifdef EMSCRIPTEN_CODE
+    const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoCollapse | FIXED_WINDOW_FLAGS;
+    ImGui::SetNextWindowPos(ImVec2(
+        main_viewport->WorkPos.x + main_viewport->Size.x - FIXED_ALGORITHM_WINDOW_WIDTH,
+        main_viewport->WorkPos.y
+    ));
+    #else
+    const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoCollapse;
+    #endif
+
+    ImGui::Begin("Algorithms window", nullptr, window_flags);
+
+    #ifdef EMSCRIPTEN_CODE
+    ImGui::SetWindowSize({
+        FIXED_ALGORITHM_WINDOW_WIDTH,
+        main_viewport->Size.y
+    });
+    #else
     ImGui::SetWindowSize({300, 500}, ImGuiCond_Once);
+    #endif
 
     static steps steps(field);
 
@@ -147,8 +168,10 @@ void display_algorithms_window(Field& field, SparseGraphView* sparseGraphView) {
         "1. BFS", "2. DFS", "3. Prim's min tree",
         "4. Dijkstra's min path", "5. A* min path",
         "6. FordFulkerson max flow",
+        #ifndef EMSCRIPTEN_CODE
         "7. Bidirect Dijkstra's min path",
         "8. Bidirect A* min path",
+        #endif
     };
     static int item_current_idx = algorithms.size() - 1;
     static int item_prev_idx = -1;

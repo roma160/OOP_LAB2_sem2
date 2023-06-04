@@ -1,6 +1,4 @@
-#ifdef __EMSCRIPTEN__
-#define EMSCRIPTEN_CODE
-#endif
+#include "main.h"
 
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -51,6 +49,13 @@ static void MainLoopForEmscripten()     { MainLoopForEmscriptenP(); }
 //     return main(__argc, __argv);
 // }
 // #endif
+
+
+bool is_any_scrollable_hovered = false;
+void add_scrollable_data(bool is_scrollable_hovered) {
+	is_any_scrollable_hovered |= is_any_scrollable_hovered;
+}
+
 
 // Main code
 int main(int, char **)
@@ -122,10 +127,44 @@ int main(int, char **)
 		switch(event->type) {
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
+				switch(event->key.keysym.scancode) {
+					case SDL_SCANCODE_SPACE:
+					case SDL_SCANCODE_BACKSPACE:
+					case SDL_SCANCODE_RETURN:
+					case SDL_SCANCODE_TAB:
+					case SDL_SCANCODE_RIGHT:
+					case SDL_SCANCODE_LEFT:
+					case SDL_SCANCODE_DOWN:
+					case SDL_SCANCODE_UP:
+					case SDL_SCANCODE_HOME:
+					case SDL_SCANCODE_END:
+						return 1;
+				}
+				if(SDL_GetModState() & KMOD_CTRL){
+					switch(event->key.keysym.sym) {
+						case SDLK_c: case SDLK_v:
+						case SDLK_a: case SDLK_x:
+						case SDLK_z: case SDLK_y:
+							return 1;
+					}
+				}
 				return 0;
 			case SDL_TEXTINPUT:
 				if(!io->WantTextInput)
 					return 0;
+			// case SDL_MOUSEWHEEL:
+			// 	#ifdef EMSCRIPTEN_CODE
+			// 	if(!any_scrollbar_active)
+			// 		emscripten_log(EM_LOG_CONSOLE, "dsdsd");
+
+			// 	#endif
+
+			// 	if(!any_scrollbar_active)
+			// 		return 0;
+			default:
+				// This case is here just to disable compile warnings
+				return 1;
+			//ImGui::get
 		}
 		return 1;
 	}, &io);
@@ -134,11 +173,16 @@ int main(int, char **)
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Our state
+    // Styling the window
     #ifndef EMSCRIPTEN_CODE
     const ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, .00f);
     #else
     const ImVec4 clear_color = ImVec4(1.f, 1.f, 1.f, 1.f);
+	ImGui::StyleColorsLight();
+
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.WindowBorderSize = 0;
+	style.FrameBorderSize = 1.f;
     #endif
 
     // GRAPH DATA
@@ -213,6 +257,9 @@ int main(int, char **)
         start_time = time();
         field.display_window();
 
+		ImGui::getScroll
+		field.set_debug_message(is_any_scrollable_hovered ? "true" : "false");
+
         //display_control_window(field);
         #ifndef EMSCRIPTEN_CODE
         sparseGraphView.show_window();
@@ -220,6 +267,8 @@ int main(int, char **)
         #else
         display_algorithms_window(field);
         #endif
+
+		is_any_scrollable_hovered = false;
 
         // Rendering
         ImGui::Render();
