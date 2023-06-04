@@ -12,8 +12,9 @@
 #endif
 
 #include <stdio.h>
+#include <tuple>
 
-#include "utils.tpp"
+#include "utils.h"
 #include "field.h"
 #include "algorithms_window.h"
 
@@ -55,6 +56,9 @@ bool is_any_scrollable_hovered = false;
 void add_scrollable_data(bool is_scrollable_hovered) {
 	is_any_scrollable_hovered |= is_any_scrollable_hovered;
 }
+
+
+bool done = false;
 
 
 // Main code
@@ -119,55 +123,73 @@ int main(int, char **)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
+	SDL_EventState(SDL_MOUSEWHEEL, SDL_DISABLE);
+
 	// https://github.com/emscripten-ports/SDL2/issues/128
+	typedef tuple<ImGuiIO*, SDL_Window*> filter_user_data_t;
+	filter_user_data_t filter_user_data(&io, window);
 	SDL_SetEventFilter([](void* userdata, SDL_Event *event){
 		// Filtering the keyboard events, and handling one only
 		// when a text input is active
-		const ImGuiIO* io = static_cast<ImGuiIO*>(userdata);
+		if(done) return 0;
+
+		auto g = ImGui::GetCurrentContext();
+		const filter_user_data_t* data = static_cast<filter_user_data_t*>(userdata);
+		const ImGuiIO* io = get<0>(*data);
+		SDL_Window* window = get<1>(*data);
+
+		// Handling application quit
+		if (event->type == SDL_QUIT) {
+			done = true;
+			return 1;
+		}
+		else if (event->type == SDL_WINDOWEVENT && event->window.event == SDL_WINDOWEVENT_CLOSE && event->window.windowID == SDL_GetWindowID(window)) {
+			done = true;
+			return 1;
+		}
+
+		const bool process_result = ImGui_ImplSDL2_ProcessEvent(event);
 		switch(event->type) {
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
-				switch(event->key.keysym.scancode) {
-					case SDL_SCANCODE_SPACE:
-					case SDL_SCANCODE_BACKSPACE:
-					case SDL_SCANCODE_RETURN:
-					case SDL_SCANCODE_TAB:
-					case SDL_SCANCODE_RIGHT:
-					case SDL_SCANCODE_LEFT:
-					case SDL_SCANCODE_DOWN:
-					case SDL_SCANCODE_UP:
-					case SDL_SCANCODE_HOME:
-					case SDL_SCANCODE_END:
-						return 1;
-				}
-				if(SDL_GetModState() & KMOD_CTRL){
-					switch(event->key.keysym.sym) {
-						case SDLK_c: case SDLK_v:
-						case SDLK_a: case SDLK_x:
-						case SDLK_z: case SDLK_y:
-							return 1;
-					}
-				}
-				return 0;
+			{
+				const ImGuiKey key = ImGui_ImplSDL2_KeycodeToImGuiKey(event->key.keysym.sym);
+
+				// Key routing
+				const ImGuiKeyOwnerData* owner_data = ImGui::GetKeyOwnerData(g, key);
+				if(owner_data->OwnerCurr != ImGuiKeyOwner_None)
+					return 1;
+				
+				// Shortcut routing
+				const ImGuiKeyRoutingTable* rt = &g->KeysRoutingTable;
+				if(rt->Index[key - ImGuiKey_NamedKey_BEGIN] != -1)
+					return 1;
+				
+				break;
+			}
 			case SDL_TEXTINPUT:
-				if(!io->WantTextInput)
-					return 0;
-			// case SDL_MOUSEWHEEL:
-			// 	#ifdef EMSCRIPTEN_CODE
-			// 	if(!any_scrollbar_active)
-			// 		emscripten_log(EM_LOG_CONSOLE, "dsdsd");
-
-			// 	#endif
-
-			// 	if(!any_scrollbar_active)
-			// 		return 0;
+			{
+				if(io->WantTextInput)
+					return 1;
+				
+				break;
+			}
+			case SDL_MOUSEWHEEL:
+			{
+				#ifdef __EMSCRIPTEN__
+					string n = to_string((int) g->WheelingWindow);
+					emscripten_log(EM_LOG_CONSOLE, n.c_str());
+				#endif
+				if(g->WheelingWindow != 0)
+					return 1;
+				
+				break;
+			}
 			default:
-				// This case is here just to disable compile warnings
-				return 1;
-			//ImGui::get
+				return (int) process_result;
 		}
-		return 1;
-	}, &io);
+		return 0;
+	}, &filter_user_data);
 
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
@@ -204,7 +226,6 @@ int main(int, char **)
     emscripten_log(EM_LOG_CONSOLE, "The main loop definition begin!");
 #endif
 
-    bool done = false;
 #ifdef __EMSCRIPTEN__
     // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
     // You may manually call LoadIniSettingsFromMemory() to load settings from your own storage.
@@ -220,22 +241,7 @@ int main(int, char **)
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         SDL_Event event;
-        while (SDL_PollEvent(&event))
-        {
-			// Do not handle keyboard events when it is not needed.
-			// switch(event.type) {
-			// 	case SDL_KEYDOWN:
-			// 	case SDL_KEYUP:
-			// 	case SDL_TEXTINPUT:
-			// 		if(!io.WantTextInput)
-			// 			continue;
-			// }
-            ImGui_ImplSDL2_ProcessEvent(&event);
-            if (event.type == SDL_QUIT)
-                done = true;
-            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
-                done = true;
-        }
+        while (SDL_PollEvent(&event)) {}
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -257,8 +263,13 @@ int main(int, char **)
         start_time = time();
         field.display_window();
 
-		ImGui::getScroll
-		field.set_debug_message(is_any_scrollable_hovered ? "true" : "false");
+		//ImGui::getScroll
+		//ImGui::GetScroll
+		// ImGuiWindow* b_window = ImGui::GetCurrentWindow();
+		// const Vec2 scroll = ImGui::GetCurrentWindow()->Scroll;
+		// if(scroll.abs() > 0)
+		// auto context = ImGui::GetCurrentContext();
+		// field.set_debug_message(to_string((int) context->WheelingWindow));
 
         //display_control_window(field);
         #ifndef EMSCRIPTEN_CODE

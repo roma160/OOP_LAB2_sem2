@@ -1,6 +1,6 @@
 #include "graph.h"
 
-#include "utils.tpp"
+#include "utils.h"
 
 #include <iostream>
 

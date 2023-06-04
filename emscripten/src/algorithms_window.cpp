@@ -5,7 +5,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "algorithms.tpp"
 #include "vec2.h"
-#include "utils.tpp"
+#include "utils.h"
 #include "main.h"
 
 #include <vector>

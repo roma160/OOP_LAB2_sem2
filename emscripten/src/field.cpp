@@ -3,7 +3,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 
 #include "field.h"
-#include "utils.tpp"
+#include "utils.h"
 #include "main.h"
 
 #include <math.h>
@@ -192,7 +192,7 @@ void Field::reset_points_pos(int graph_id, Vec2 point, float R) {
         }
 
         // Setting new position
-        const float alpha = 2 * i * M_PI / n;
+        const float alpha = 2 * i * PI / n;
         graph.points[i] = Vec2{ cos(alpha), sin(alpha) } * R + point;
         graph.speeds[i] = {0, 0};
         {
@@ -482,6 +482,7 @@ void Field::set_physics_ban(bool is_banned) {
         use_ticks = false;
 }
 
+#ifdef _DEBUG
 void Field::set_debug_message(string message) {
     debug_message = message;
 }
@@ -489,3 +490,4 @@ void Field::set_debug_message(string message) {
 void Field::hide_debug_message() {
     debug_message = "";
 }
+#endif
