@@ -39,3 +39,11 @@ inline int max(int a, int b) { return a > b ? a : b; }
 string read_file(const string filename);
 
 ImGuiKey ImGui_ImplSDL2_KeycodeToImGuiKey(int keycode);
+
+template<typename T>
+bool contains(vector<T>& v, T value) {
+    for(int i = 0; i < v.size(); i++)
+        if(v[i] == value)
+            return true;
+    return false;
+}

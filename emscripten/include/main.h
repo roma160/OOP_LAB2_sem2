@@ -11,5 +11,3 @@
 #define FIXED_ALGORITHM_WINDOW_WIDTH 300
 
 //#define EMSCRIPTEN_CODE
-
-void add_scrollable_data(bool is_scrollable_hovered);

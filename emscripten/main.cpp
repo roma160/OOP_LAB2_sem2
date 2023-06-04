@@ -13,6 +13,9 @@
 
 #include <stdio.h>
 #include <tuple>
+#include <string>
+#include <vector>
+#include <set>
 
 #include "utils.h"
 #include "field.h"
@@ -51,27 +54,18 @@ static void MainLoopForEmscripten()     { MainLoopForEmscriptenP(); }
 // }
 // #endif
 
-
-bool is_any_scrollable_hovered = false;
-void add_scrollable_data(bool is_scrollable_hovered) {
-	is_any_scrollable_hovered |= is_any_scrollable_hovered;
-}
-
-
 bool done = false;
+vector<string> args_list;
+set<string> args_set;
 
 
 // Main code
-int main(int, char **)
+int main(int argc, char* argv[])
 {
-    // Disabling keyboards events for browser
-    // https://github.com/emscripten-core/emscripten/issues/3621
-    // https://github.com/emscripten-ports/SDL2/pull/10#issuecomment-87466380
-    // SDL_EventState(SDL_TEXTINPUT, SDL_DISABLE);
-    // SDL_EventState(SDL_KEYDOWN, SDL_DISABLE);
-    // SDL_EventState(SDL_KEYUP, SDL_DISABLE);
-
-	// ImGui
+	args_list = vector<string>(argc);
+	for(int i = 0; i < argc; i++)
+		args_list[i] = string(argv[i]);
+	args_set = set<string>(args_list.begin(), args_list.end());
 
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
@@ -125,7 +119,11 @@ int main(int, char **)
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 
 	// It would be better, to just leave the mouse absence as it is
-	SDL_EventState(SDL_MOUSEWHEEL, SDL_DISABLE);
+	#ifdef __EMSCRIPTEN__
+	// But we allow enabling it using args
+	if(!args_set.count("--wheel"))
+		SDL_EventState(SDL_MOUSEWHEEL, SDL_DISABLE);
+	#endif
 
 	// https://github.com/emscripten-ports/SDL2/issues/128
 	typedef tuple<ImGuiIO*, SDL_Window*> filter_user_data_t;
@@ -176,17 +174,6 @@ int main(int, char **)
 				
 				break;
 			}
-			// case SDL_MOUSEWHEEL:
-			// {
-			// 	#ifdef __EMSCRIPTEN__
-			// 		string n = to_string((int) g->WheelingWindow);
-			// 		emscripten_log(EM_LOG_CONSOLE, n.c_str());
-			// 	#endif
-			// 	if(g->WheelingWindow != 0)
-			// 		return 1;
-				
-			// 	break;
-			// }
 			default:
 				return (int) process_result;
 		}
@@ -280,8 +267,6 @@ int main(int, char **)
         #else
         display_algorithms_window(field);
         #endif
-
-		is_any_scrollable_hovered = false;
 
         // Rendering
         ImGui::Render();

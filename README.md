@@ -30,3 +30,7 @@ cmake --build ./build/emscripten_build --target main
 ```console
 python -m http.server --directory ./docs 8000
 ```
+
+# Console arguments
+
+* `--wheel` - by default mouse wheel event is disable, but you can use this flag to enable it back
