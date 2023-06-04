@@ -123,6 +123,8 @@ int main(int, char **)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+	// It would be better, to just leave the mouse absence as it is
 	SDL_EventState(SDL_MOUSEWHEEL, SDL_DISABLE);
 
 	// https://github.com/emscripten-ports/SDL2/issues/128
@@ -174,17 +176,17 @@ int main(int, char **)
 				
 				break;
 			}
-			case SDL_MOUSEWHEEL:
-			{
-				#ifdef __EMSCRIPTEN__
-					string n = to_string((int) g->WheelingWindow);
-					emscripten_log(EM_LOG_CONSOLE, n.c_str());
-				#endif
-				if(g->WheelingWindow != 0)
-					return 1;
+			// case SDL_MOUSEWHEEL:
+			// {
+			// 	#ifdef __EMSCRIPTEN__
+			// 		string n = to_string((int) g->WheelingWindow);
+			// 		emscripten_log(EM_LOG_CONSOLE, n.c_str());
+			// 	#endif
+			// 	if(g->WheelingWindow != 0)
+			// 		return 1;
 				
-				break;
-			}
+			// 	break;
+			// }
 			default:
 				return (int) process_result;
 		}
