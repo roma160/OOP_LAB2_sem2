@@ -2,6 +2,8 @@
 	import Counter from './Counter.svelte';
 	import welcome from '$lib/images/svelte-welcome.webp';
 	import welcome_fallback from '$lib/images/svelte-welcome.png';
+
+	import TestEmscripten from '../emscripten/TestEmscripten.svelte';
 </script>
 
 <svelte:head>
@@ -26,6 +28,9 @@
 	</h2>
 
 	<Counter />
+
+	<TestEmscripten />
+	
 </section>
 
 <style>
