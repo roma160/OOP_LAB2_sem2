@@ -57,8 +57,8 @@ static void MainLoopForEmscripten()     { MainLoopForEmscriptenP(); }
 
 ImVec4 clear_color;
 
-void global::setDarkTheme() {
-    if(global::isDarkTheme) return;
+void global::setDarkTheme(bool ignore_current) {
+    if(!ignore_current && global::isDarkTheme) return;
 
     clear_color = ImVec4(0.45f, 0.55f, 0.60f, .00f);
     ImGui::StyleColorsDark();
@@ -70,8 +70,8 @@ void global::setDarkTheme() {
     global::isDarkTheme = true;
 }
 
-void global::setLightTheme() {
-    if(!global::isDarkTheme) return;
+void global::setLightTheme(bool ignore_current) {
+    if(!ignore_current && !global::isDarkTheme) return;
 
     clear_color = ImVec4(1.f, 1.f, 1.f, 1.f);
 	ImGui::StyleColorsLight();
@@ -216,9 +216,15 @@ int main(int argc, char* argv[])
 
     // Styling the window
     #ifndef EMSCRIPTEN_CODE
-    global::setDarkTheme();
+    if(args_set.count("--light"))
+        global::setLightTheme(true);
+    else
+        global::setDarkTheme(true);
     #else
-    global::setLightTheme();
+    if(args_set.count("--dark"))
+        global::setDarkTheme(true);
+    else
+        global::setLightTheme(true);
     #endif
 
     // GRAPH DATA
@@ -233,7 +239,7 @@ int main(int argc, char* argv[])
     #endif
 
     // Main loop
-#ifdef __EMSCRIPTEN__
+#ifdef EMSCRIPTEN_CODE
     emscripten_log(EM_LOG_CONSOLE, "The main loop definition begin!");
 #endif
 

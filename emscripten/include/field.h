@@ -62,6 +62,7 @@ private:
     bool show_edge_weights = true;
     bool show_only_selected_edges = false;
     bool show_actual_distance = false;
+    bool is_dark_theme_selected;
 
     string debug_message;
 

@@ -10,13 +10,17 @@
 #define FIXED_WINDOW_FLAGS ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground
 #define FIXED_ALGORITHM_WINDOW_WIDTH 300
 
+#ifdef EMSCRIPTEN_CODE
+#define DELTA_TICKS 25
+#else
 #define DELTA_TICKS 29
+#endif
 
 namespace global {
-    static bool isDarkTheme = true;
+    static bool isDarkTheme;
 
-    void setDarkTheme();
-    void setLightTheme();
+    void setDarkTheme(bool ignore_current = false);
+    void setLightTheme(bool ignore_current = false);
 };
 
 //#define EMSCRIPTEN_CODE

@@ -42,7 +42,9 @@ void Field::FGraph::clear_annotations() {
 }
 
 
-Field::Field(float cell_size, Vec2 bounds): cell_size(cell_size), bounds(bounds), graphs() {}
+Field::Field(float cell_size, Vec2 bounds): 
+    cell_size(cell_size), bounds(bounds), graphs(),
+    is_dark_theme_selected(global::isDarkTheme) {}
 
 pair<int, int> Field::get_field_index(const Vec2& point) const {
     return {
@@ -301,7 +303,6 @@ void Field::display_window(){
         ImGui::SameLine();
         ImGui::Checkbox("Bounds", &bound_forces);
 
-        static bool is_dark_theme_selected = global::isDarkTheme;
         ImGui::SameLine();
         if(ImGui::Checkbox("Use dark theme", &is_dark_theme_selected)) {
             if (is_dark_theme_selected) {
