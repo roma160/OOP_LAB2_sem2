@@ -17,7 +17,8 @@
 #endif
 
 namespace global {
-    static bool isDarkTheme;
+    // https://stackoverflow.com/a/19929727/8302811
+    extern bool isDarkTheme;
 
     void setDarkTheme(bool ignore_current = false);
     void setLightTheme(bool ignore_current = false);

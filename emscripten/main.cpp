@@ -56,6 +56,7 @@ static void MainLoopForEmscripten()     { MainLoopForEmscriptenP(); }
 
 
 ImVec4 clear_color;
+bool global::isDarkTheme;
 
 void global::setDarkTheme(bool ignore_current) {
     if(!ignore_current && global::isDarkTheme) return;
@@ -138,7 +139,7 @@ int main(int argc, char* argv[])
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Window *window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    SDL_Window *window = SDL_CreateWindow("OOP_LAB2_sem2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl_context);
     SDL_GL_SetSwapInterval(1); // Enable vsync
@@ -228,7 +229,7 @@ int main(int argc, char* argv[])
     #endif
 
     // GRAPH DATA
-    Field field(200);
+    Field field(200, Vec2{550, 500});
     field.add_graph(Graph(
         {6, vector<Graph::Connection>(6, true)}
     ));
