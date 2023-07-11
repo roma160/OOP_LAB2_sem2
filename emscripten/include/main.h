@@ -11,7 +11,7 @@
 #define FIXED_ALGORITHM_WINDOW_WIDTH 300
 
 #ifdef EMSCRIPTEN_CODE
-#define DELTA_TICKS 25
+#define DELTA_TICKS 10
 #else
 #define DELTA_TICKS 29
 #endif
