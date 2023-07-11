@@ -207,13 +207,12 @@ int main(int argc, char* argv[])
     //sparseGraphView.load_graph(read_file("sparse_graph_data.txt"));
     #endif
 
-    double start_time = time();
-    double dt = 0;
-
     // Main loop
 #ifdef __EMSCRIPTEN__
     emscripten_log(EM_LOG_CONSOLE, "The main loop definition begin!");
 #endif
+
+    auto a = SDL_GetTicks();
 
 #ifdef __EMSCRIPTEN__
     // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
@@ -236,8 +235,6 @@ int main(int argc, char* argv[])
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
-        
-        start_time = time();
 
         // Main window rendering pipeline
 
@@ -246,10 +243,7 @@ int main(int argc, char* argv[])
         ImGui::ShowDemoWindow();
         #endif
 
-        dt = time() - start_time;
-        // But the actual dt could also be used
         field.do_tick(.02);
-        start_time = time();
         field.display_window();
 
 		//ImGui::getScroll
@@ -267,6 +261,13 @@ int main(int argc, char* argv[])
         #else
         display_algorithms_window(field);
         #endif
+
+        const auto delta_ticks = DELTA_TICKS;
+        auto b = SDL_GetTicks();
+        if (b - a < delta_ticks) {
+            SDL_Delay(delta_ticks + a - b);
+        }
+        a = b;
 
         // Rendering
         ImGui::Render();
