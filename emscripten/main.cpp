@@ -54,6 +54,36 @@ static void MainLoopForEmscripten()     { MainLoopForEmscriptenP(); }
 // }
 // #endif
 
+
+ImVec4 clear_color;
+
+void global::setDarkTheme() {
+    if(global::isDarkTheme) return;
+
+    clear_color = ImVec4(0.45f, 0.55f, 0.60f, .00f);
+    ImGui::StyleColorsDark();
+
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.WindowBorderSize = 1;
+	style.FrameBorderSize = 0;
+
+    global::isDarkTheme = true;
+}
+
+void global::setLightTheme() {
+    if(!global::isDarkTheme) return;
+
+    clear_color = ImVec4(1.f, 1.f, 1.f, 1.f);
+	ImGui::StyleColorsLight();
+
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.WindowBorderSize = 0;
+	style.FrameBorderSize = 1.f;
+
+    global::isDarkTheme = false;
+}
+
+
 bool done = false;
 vector<string> args_list;
 set<string> args_set;
@@ -186,14 +216,9 @@ int main(int argc, char* argv[])
 
     // Styling the window
     #ifndef EMSCRIPTEN_CODE
-    const ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, .00f);
+    global::setDarkTheme();
     #else
-    const ImVec4 clear_color = ImVec4(1.f, 1.f, 1.f, 1.f);
-	ImGui::StyleColorsLight();
-
-	ImGuiStyle& style = ImGui::GetStyle();
-	style.WindowBorderSize = 0;
-	style.FrameBorderSize = 1.f;
+    global::setLightTheme();
     #endif
 
     // GRAPH DATA

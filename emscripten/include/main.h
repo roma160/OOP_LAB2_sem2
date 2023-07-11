@@ -12,4 +12,11 @@
 
 #define DELTA_TICKS 29
 
+namespace global {
+    static bool isDarkTheme = true;
+
+    void setDarkTheme();
+    void setLightTheme();
+};
+
 //#define EMSCRIPTEN_CODE

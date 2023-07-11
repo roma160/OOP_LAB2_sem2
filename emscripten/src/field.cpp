@@ -300,6 +300,17 @@ void Field::display_window(){
         }
         ImGui::SameLine();
         ImGui::Checkbox("Bounds", &bound_forces);
+
+        static bool is_dark_theme_selected = global::isDarkTheme;
+        ImGui::SameLine();
+        if(ImGui::Checkbox("Use dark theme", &is_dark_theme_selected)) {
+            if (is_dark_theme_selected) {
+                global::setDarkTheme();
+            }
+            else {
+                global::setLightTheme();
+            }
+        }
     }
     else {
         ImGui::Checkbox("show_options", &show_options);
