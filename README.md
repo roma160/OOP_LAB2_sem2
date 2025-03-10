@@ -1,12 +1,11 @@
-The project configuration was taken from here:
-https://github.com/Pesc0/imgui-cmake.git
-
-# The OOP Lab1 Semester2
-ImGui realtime graph visualisation tool.
+# [ImGUI](https://github.com/ocornut/imgui) force directed graph visualization (OOP Lab1 Semester2)
+The used stack allows the compilation of the project to both Desktop and WebAssembly targets. You can test the WebAssembly build at https://roma160.github.io/OOP_LAB2_sem2/.
 
 https://github.com/roma160/OOP_LAB2_sem2/assets/17747914/2ba05d48-cb5d-4dc8-ae1c-5eb60ba1bebb
 
 ## Building process
+(The project configuration was taken from here: https://github.com/Pesc0/imgui-cmake.git)
+
 As this project uses several external libs ([ImGui](https://github.com/ocornut/imgui), [SDL](https://github.com/libsdl-org/SDL.git)), to build the project you will first need to init the git submodules:
 ```console
 git submodule update --init --recursive
@@ -23,7 +22,7 @@ cmake -S "." -B "./build"
 cmake --build "./build" --target main
 ```
 
-### Emscripten build
+### Emscripten build (WebAssembly)
 https://github.com/roma160/OOP_LAB2_sem2/assets/17747914/bcdc84dc-9ddf-4d09-9cdc-7c178c31bd97
 
 General guidelines could be found and was stolen from here: 
